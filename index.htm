@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <!-- Meta tag essencial para responsividade: garante que a largura da viewport se ajuste ao dispositivo -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GANWALK II Visualização Psicodélica</title>
+    <title>Ganwalk II - Experiência I</title>
     <!-- Tailwind CSS para estilização rápida e responsiva -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js para a visualização 3D -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Importa as fontes Jacquard 12 e Inter do Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Jacquard+12&display=swap" rel="stylesheet">
+    <!-- Importa as fontes Astloch e Inter do Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Astloch:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* Estilos gerais para o corpo da página */
@@ -43,7 +43,8 @@
         }
         /* Estilo para o texto "GANWALK II" */
         #ganwalk-text {
-            font-family: 'Jacquard 12', cursive; /* Aplica a fonte Jacquard 12, não alterada */
+            font-family: 'Astloch', cursive; /* Aplica a fonte Astloch */
+            font-weight: 700; /* Deixa o título em negrito */
             font-size: 10vw; /* Tamanho da fonte responsivo (10% da largura da viewport) */
             color: #fff; /* Cor do texto branca, muda com .mustard-theme */
             position: relative;
@@ -51,7 +52,8 @@
             pointer-events: none; /* Permite que cliques passem para o canvas abaixo */
             text-align: center;
             line-height: 1; /* Garante que o texto não tenha espaçamento extra */
-            transition: text-shadow 0.1s ease-out, transform 0.1s ease, color 0.5s ease; /* Transição suave para o efeito de brilho e transform */
+            opacity: 0; /* Começa invisível para esperar a fonte carregar */
+            transition: opacity 0.5s ease, text-shadow 0.1s ease-out, transform 0.1s ease, color 0.5s ease; /* Adiciona opacity à transição */
         }
         /* Efeito de brilho neon em tons de cinza para o texto GANWALK II */
         .ganwalk-neon-glow {
@@ -913,7 +915,7 @@
             });
             overdriveSlider.addEventListener('input', (e) => overdriveNode.curve = makeDistortionCurve(parseFloat(e.target.value) * 1000));
             pitchSlider.addEventListener('input', (e) => {
-                 if (sourceNode) sourceNode.playbackRate.value = parseFloat(e.target.value);
+                if (sourceNode) sourceNode.playbackRate.value = parseFloat(e.target.value);
             });
             lowEqSlider.addEventListener('input', (e) => eqNodes.low.gain.value = parseFloat(e.target.value));
             midEqSlider.addEventListener('input', (e) => eqNodes.mid.gain.value = parseFloat(e.target.value));
@@ -1099,7 +1101,7 @@
             overdriveNode.curve = makeDistortionCurve(0);
             // Corrige o bug: agora a taxa de reprodução do nó de áudio também é redefinida
             if (sourceNode) {
-                 sourceNode.playbackRate.value = 1;
+                sourceNode.playbackRate.value = 1;
             }
             eqNodes.low.gain.value = 0;
             eqNodes.mid.gain.value = 0;
@@ -1228,7 +1230,7 @@
                     const x = initialPositions[i];
                     const y = initialPositions[i + 1];
                     let waveEffect = Math.sin(x * 0.5 + currentTime * 2 * direction) * bassAvg * 5 + 
-                                       Math.cos(y * 0.5 + currentTime * 3 * direction) * midAvg * 3;
+                                     Math.cos(y * 0.5 + currentTime * 3 * direction) * midAvg * 3;
                     const jitterX = (Math.random() - 0.5) * highAvg * 0.8 * (reverbValue * 8 + highEqValue * 0.5) * direction;
                     const jitterY = (Math.random() - 0.5) * highAvg * 0.8 * (reverbValue * 8 + highEqValue * 0.5) * direction;
                     positions[i] = x + jitterX;
@@ -1310,6 +1312,13 @@
         });
 
         window.onload = async function () {
+            // Espera as fontes personalizadas carregarem antes de mostrar o título
+            await document.fonts.ready;
+            
+            // Agora que a fonte carregou, torna o título visível com um fade-in
+            ganwalkText.style.opacity = '1';
+
+            // Continua com a inicialização do aplicativo
             initThreeJS();
             initAudio();
             await loadAudio();
@@ -1318,3 +1327,4 @@
     </script>
 </body>
 </html>
+
