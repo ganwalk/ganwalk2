@@ -1,1332 +1,936 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <!-- Meta tag essencial para responsividade: garante que a largura da viewport se ajuste ao dispositivo -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ganwalk II - Experiência I</title>
-    <!-- Tailwind CSS para estilização rápida e responsiva -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Three.js para a visualização 3D -->
+    <title>GANWALK | OFICIAL (C) 2026 - EXP I</title>
+    
+    <!-- Three.js e Post-Processing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Importa as fontes Astloch e Inter do Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Astloch:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+    <!-- Fontes -->
+    <link href="https://fonts.googleapis.com/css2?family=Astloch:wght@400;700&display=block" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+
     <style>
-        /* Estilos gerais para o corpo da página */
-        body {
-            margin: 0;
-            overflow: hidden; /* Esconde barras de rolagem */
-            background-color: #000; /* Fundo preto */
-            font-family: 'Inter', sans-serif; /* Fonte padrão alterada para Inter */
-            color: white; /* Cor do texto padrão */
-        }
-        /* Contêiner principal para a visualização */
-        #visualizer-container {
-            position: relative;
-            width: 100vw; /* Ocupa 100% da largura da viewport, tornando-o responsivo */
-            height: 100vh; /* Ocupa 100% da altura da viewport, tornando-o responsivo */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-        /* Estilo para o canvas Three.js */
-        canvas {
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%; /* Ocupa 100% da largura do contêiner */
-            height: 100%; /* Ocupa 100% da altura do contêiner */
-            z-index: 0; /* Fica no fundo */
-        }
-        /* Estilo para o texto "GANWALK II" */
-        #ganwalk-text {
-            font-family: 'Astloch', cursive; /* Aplica a fonte Astloch */
-            font-weight: 700; /* Deixa o título em negrito */
-            font-size: 10vw; /* Tamanho da fonte responsivo (10% da largura da viewport) */
-            color: #fff; /* Cor do texto branca, muda com .mustard-theme */
-            position: relative;
-            z-index: 1; /* Fica acima do canvas */
-            pointer-events: none; /* Permite que cliques passem para o canvas abaixo */
-            text-align: center;
-            line-height: 1; /* Garante que o texto não tenha espaçamento extra */
-            opacity: 0; /* Começa invisível para esperar a fonte carregar */
-            transition: opacity 0.5s ease, text-shadow 0.1s ease-out, transform 0.1s ease, color 0.5s ease; /* Adiciona opacity à transição */
-        }
-        /* Efeito de brilho neon em tons de cinza para o texto GANWALK II */
-        .ganwalk-neon-glow {
-            /* Este é o estilo base, a intensidade será ajustada via JS */
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(200, 200, 200, 0.6), 0 0 30px rgba(150, 150, 150, 0.4), 0 0 40px rgba(100, 100, 100, 0.2);
+        /* --- GERAL --- */
+        *, *::before, *::after {
+            box-sizing: border-box; 
         }
 
-        /* Animação de glitch para o texto GANWALK II */
-        @keyframes glitch-effect {
-            0% {
-                text-shadow: 2px 2px 10px rgba(255, 0, 0, 0.8), -2px -2px 10px rgba(0, 255, 255, 0.6);
-                transform: translate(-2px, 2px);
-            }
-            10% {
-                text-shadow: -2px 2px 10px rgba(0, 255, 0, 0.8), 2px -2px 10px rgba(255, 0, 255, 0.6);
-                transform: translate(2px, -2px);
-            }
-            20% {
-                text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(200, 200, 200, 0.6); /* Branco */
-                transform: translate(0, 0);
-            }
-            30% {
-                text-shadow: 1px -1px 8px rgba(0, 0, 255, 0.7), -1px 1px 8px rgba(255, 255, 0, 0.7);
-                transform: translate(1px, -1px);
-            }
-            40% {
-                text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(200, 200, 200, 0.6); /* Branco */
-                transform: translate(0, 0);
-            }
-            50% {
-                text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(200, 200, 200, 0.6); /* Branco */
-                transform: translate(0, 0);
-            }
-            60% {
-                text-shadow: -1px -1px 10px rgba(255, 100, 0, 0.8), 1px 1px 10px rgba(0, 255, 255, 0.6);
-                transform: translate(1px, 1px);
-            }
-            70% {
-                text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(200, 200, 200, 0.6); /* Branco */
-                transform: translate(0, 0);
-            }
-            80% {
-                text-shadow: 2px 0 8px rgba(255, 0, 100, 0.7), -2px 0 8px rgba(0, 255, 150, 0.7);
-                transform: translate(-2px, 0);
-            }
-            90% {
-                text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(200, 200, 200, 0.6); /* Branco */
-                transform: translate(0, 0);
-            }
-            100% {
-                text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(200, 200, 200, 0.6); /* Branco */
-                transform: translate(0, 0);
-            }
+        :root {
+            --bg-color: #000000;
+            --control-bg: rgba(0, 0, 0, 0.9);
+            --border-color: rgba(255, 255, 255, 0.3);
+            --shadow-color: rgba(255, 255, 255, 0.15);
+            --text-color: #ffffff;
+            --highlight-color: #ffffff;
+            --highlight-rgb: 255, 255, 255;
         }
 
-        .ganwalk-glitch {
-            animation: glitch-effect 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        body.mustard-theme {
+            --highlight-color: #E1AD01;
+            --highlight-rgb: 225, 173, 1;
+            --border-color: #E1AD01;
+            --shadow-color: rgba(225, 173, 1, 0.5);
+            --text-color: #E1AD01;
         }
 
-        /* Animação para o brilho da palavra "faça" */
-        @keyframes faça-flicker {
-            0%, 100% {
-                text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #fff; /* Branco */
-            }
-            50% {
-                text-shadow: 0 0 2px #fff, 0 0 5px #fff, 0 0 10px #fff; /* Branco */
-            }
-        }
-        .faça-glow {
-            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #fff; /* Branco */
-            animation: faça-flicker 2s infinite alternate;
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif; color: var(--text-color);
+            max-width: 100vw; 
+            transition: background-color 0.5s ease;
         }
 
-        /* Estilo para a frase "Clique, ouça e faça." */
+        /* --- LETREIRO TOP (MARQUEE) --- */
+        #top-marquee {
+            position: fixed; top: 0; left: 0; width: 100%; height: 30px;
+            background: var(--bg-color); border-bottom: 1px solid var(--border-color);
+            color: var(--text-color); font-family: 'Silkscreen', monospace;
+            font-size: 13px; display: flex; align-items: center;
+            text-decoration: none; overflow: hidden; z-index: 10000;
+            opacity: 0; pointer-events: none; transform: translateY(-100%);
+            transition: opacity 0.8s ease, transform 0.8s ease, background-color 0.5s ease, color 0.5s ease;
+        }
+        #top-marquee.visible {
+            opacity: 1; pointer-events: auto; transform: translateY(0);
+        }
+        #top-marquee:hover {
+            background: var(--highlight-color); color: var(--bg-color); border-bottom-color: var(--highlight-color);
+        }
+        #top-marquee:hover .marquee-content span {
+            text-shadow: none; animation: none;
+        }
+        .marquee-content {
+            display: flex; white-space: nowrap;
+            animation: scroll-marquee 25s linear infinite;
+        }
+        .marquee-content span {
+            padding-right: 50px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px rgba(var(--highlight-rgb), 0.5);
+            animation: marquee-glow 2s infinite alternate;
+        }
+        @keyframes scroll-marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        @keyframes marquee-glow {
+            0%, 100% { text-shadow: 0 0 5px var(--highlight-color), 0 0 10px var(--highlight-color); }
+            50% { text-shadow: 0 0 2px rgba(var(--highlight-rgb), 0.3); opacity: 0.8; }
+        }
+
+        /* --- LOADING SCREEN --- */
+        #global-loader {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--bg-color); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 5000;
+            transition: opacity 1.5s ease, background-color 0.5s ease;
+        }
+        #loader-title {
+            font-family: 'Astloch', serif; font-weight: 700; font-size: 12vw;
+            color: var(--highlight-color); margin-bottom: 20px; line-height: 1; text-align: center;
+            text-shadow: 0 0 10px rgba(var(--highlight-rgb), 0.8), 0 0 20px rgba(var(--highlight-rgb), 0.6);
+            transition: color 0.5s ease, text-shadow 0.5s ease;
+        }
         #click-to-start-text {
-            font-size: 1.5rem;
-            color: #fff; /* Cor do texto branca */
-            cursor: pointer;
-            z-index: 1;
-            transition: color 0.3s ease, opacity 0.5s ease;
-            opacity: 1;
+            font-size: 1.5rem; color: var(--highlight-color); cursor: pointer; z-index: 5001;
+            transition: color 0.3s ease, opacity 0.5s ease; text-align: center; padding: 0 20px;
         }
-        #click-to-start-text:hover {
-            color: #ccc;
-        }
+        #click-to-start-text.loading { pointer-events: none; color: var(--text-color); cursor: default; }
+        .faça-glow { text-shadow: 0 0 5px var(--highlight-color), 0 0 10px var(--highlight-color); animation: faça-flicker 2s infinite alternate; }
+        @keyframes faça-flicker { 0%,100%{text-shadow:0 0 5px var(--highlight-color),0 0 10px var(--highlight-color);} 50%{text-shadow:0 0 2px var(--highlight-color),0 0 5px var(--highlight-color);} }
+        @keyframes ellipsis { 0%{content:".";} 33%{content:"..";} 66%{content:"...";} }
+        #click-to-start-text.loading::after { content: "..."; animation: ellipsis 1.5s infinite; display: inline-block; width: 20px; text-align: left; }
 
-        /* Estilos para a animação de reticências */
-        @keyframes ellipsis {
-            0% { content: "."; }
-            33% { content: ".."; }
-            66% { content: "..."; }
+        /* --- SEÇÕES --- */
+        .screen-section {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; pointer-events: none; transition: opacity 0.8s ease, background-color 0.5s ease;
+            z-index: 0; display: none; background: var(--bg-color);
         }
+        .screen-section.active { opacity: 1; pointer-events: auto; display: block; z-index: 10; }
 
-        #click-to-start-text.loading {
-            pointer-events: none; /* Desabilita cliques durante o carregamento */
-            cursor: default;
-            color: #777;
-        }
-        #click-to-start-text.loading::after {
-            content: "...";
-            animation: ellipsis 1.5s infinite;
-            display: inline-block;
-            width: 20px; /* Largura para os 3 pontos */
-            text-align: left;
-        }
-
-
-        /* Estilo para a barra de controles (reprodutor de música) - Matrix/Cyberpunk */
-        #controls-bar {
-            position: absolute;
-            bottom: 20px; /* 20px do fundo */
-            width: 90%; /* Ocupa 100% da largura, responsivo */
-            max-width: 800px; /* Largura máxima para desktops, mas se ajusta em telas menores */
-            background: rgba(0, 0, 0, 0.8); /* Fundo preto semi-transparente */
-            backdrop-filter: blur(10px); /* Efeito de desfoque (Apple-like) */
-            border-radius: 0; /* Cantos retos */
-            padding: 15px 25px; /* Preenchimento interno */
-            display: flex;
-            flex-direction: column; /* Organiza os elementos em coluna */
-            gap: 15px; /* Espaçamento entre as seções */
-            z-index: 2; /* Fica acima de tudo */
-            box-shadow: 0 4px 30px rgba(255, 255, 255, 0.5); /* Sombra branca, muda com .mustard-theme */
-            border: 1px solid #fff; /* Borda branca, muda com .mustard-theme */
-            transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
-        }
+        /* --- ESTILOS EXP 1 (VISUALIZER) --- */
+        #p1-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        canvas#p1-canvas { display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
         
-        #controls-bar.hidden {
-            opacity: 0;
-            transform: translateY(100%);
-            pointer-events: none;
+        #p1-main-text {
+            font-family: 'Astloch', serif; font-weight: 700; font-size: 10vw;
+            color: var(--highlight-color); position: relative; z-index: 1;
+            pointer-events: none; text-align: center; line-height: 1; opacity: 0;
+            transition: opacity 0.5s ease, text-shadow 0.1s ease-out, transform 0.1s ease, color 0.5s ease;
         }
+        .ganwalk-neon-glow { text-shadow: 0 0 10px rgba(var(--highlight-rgb), 0.8), 0 0 20px rgba(var(--highlight-rgb), 0.6); }
 
+        #p1-interaction-tooltip {
+            position: absolute; top: 50%; left: 50%; transform: translate(180px, -140px);
+            pointer-events: none; opacity: 0; transition: opacity 0.5s ease;
+            display: flex; flex-direction: column; align-items: flex-start; z-index: 10;
+        }
+        #p1-interaction-tooltip.visible { opacity: 1; }
+        .tooltip-line { width: 60px; height: 1px; background-color: var(--highlight-color); transform: rotate(135deg); transform-origin: top left; margin-left: 0px; margin-top: 10px; box-shadow: 0 0 5px var(--highlight-color); transition: background-color 0.5s ease, box-shadow 0.5s ease; }
+        .tooltip-text { color: var(--highlight-color); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-left: 20px; margin-top: -5px; text-shadow: 0 0 5px var(--highlight-color); font-family: 'Silkscreen', cursive; transition: color 0.5s ease, text-shadow 0.5s ease; }
 
-        /* Estilo para a seção de controles principais (play/pause, volume, progresso) */
-        .main-controls {
-            display: flex;
-            align-items: center;
-            gap: 20px; /* Espaçamento entre os controles principais */
-            flex-wrap: wrap; /* Permite quebrar em telas menores, tornando-o responsivo */
-            justify-content: center; /* Centraliza os itens */
-            width: 100%; /* Ocupa toda a largura da barra de controle */
+        #p1-controls-bar {
+            position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: var(--control-bg); backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color); box-shadow: 0 0 30px var(--shadow-color);
+            width: 90vw; max-width: 900px; padding: 20px 25px; border-radius: 8px;
+            z-index: 100; opacity: 0; pointer-events: none;
+            transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out, background-color 0.5s ease, border-color 0.5s ease;
         }
+        #p1-controls-bar.expanded { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
 
-        /* Estilo para a barra de progresso */
-        .progress-bar-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-grow: 3; /* Faz a barra de progresso ocupar mais espaço */
-            min-width: 150px; /* Garante uma largura mínima */
+        #p1-toggle-button {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 50px; height: 50px; border-radius: 50%;
+            background: var(--control-bg); border: 1px solid var(--border-color);
+            box-shadow: 0 0 20px var(--shadow-color); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; pointer-events: auto; transition: background-color 0.5s ease, opacity 0.5s ease, border-color 0.5s ease;
+            backdrop-filter: blur(10px); z-index: 101; opacity: 0;
         }
+        #p1-toggle-button.visible { opacity: 1; }
+        #p1-toggle-arrow { fill: var(--highlight-color); width: 24px; height: 24px; transition: transform 0.4s ease-in-out, fill 0.5s ease; }
 
-        /* Estilo para o tempo de progresso */
-        #progress-time-display {
-            font-size: 0.8rem;
-            color: #fff; /* Cor branca, muda com .mustard-theme */
-            white-space: nowrap;
-            min-width: 40px; /* Garante que o texto não se movi tanto */
-            text-align: right;
-            transition: color 0.5s ease;
+        .controls-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 25px; 
         }
-
-        /* Estilo para a seção de efeitos */
-        .effects-controls {
-            display: flex;
-            flex-wrap: wrap; /* Permite quebrar em telas menores, tornando-o responsivo */
-            justify-content: space-around; /* Distribui os itens uniformemente */
-            gap: 15px; /* Espaçamento entre os controles de efeito */
-            width: 100%; /* Ocupa toda a largura da barra de controle */
+        .control-group { display: flex; flex-direction: column; gap: 12px; height: 100%; }
+        .control-group label { 
+            font-size: 10px; 
+            text-transform: uppercase; letter-spacing: 0.5px; 
+            color: var(--text-color); margin-bottom: -4px; 
+            font-weight: 400; font-family: 'Silkscreen', cursive; 
+            transition: color 0.5s ease; 
         }
-
-        /* Estilo para cada grupo de controle (label + slider) */
-        .control-group {
-            display: flex;
-            flex-direction: column; /* Padrão: label acima do slider */
-            align-items: center;
-            gap: 5px;
-            min-width: 80px; /* Largura mínima para cada grupo */
-            flex-grow: 1; /* Permite que os grupos cresçam para preencher o espaço */
-        }
-
-        /* Ajuste para a barra de volume ser menor e o ícone ao lado */
-        .control-group.volume-control {
-            flex-direction: row; /* Alinha ícone e slider lado a lado */
-            align-items: center;
-            flex-grow: 1; /* Menor flex-grow para ser menor que a barra de progresso */
-            max-width: 150px; /* Limita a largura máxima */
-            gap: 5px; /* Espaçamento entre o ícone e o slider */
-        }
-        .control-group.volume-control input[type="range"] {
-            flex-grow: 1; /* Faz o slider ocupar o espaço restante */
-        }
-
-
-        .control-group label {
-            font-size: 0.8rem; /* Tamanho da fonte menor para os rótulos */
-            color: #fff; /* Cor branca, muda com .mustard-theme */
-            white-space: nowrap; /* Evita que o texto quebre */
-            transition: color 0.5s ease;
-        }
-        /* Estilo para sliders (input type="range") */
-        input[type="range"] {
-            -webkit-appearance: none; /* Remove o estilo padrão do navegador */
-            width: 100%;
-            height: 8px;
-            background: #111; /* Cor da trilha do slider (preto) */
-            border-radius: 5px;
-            outline: none;
-            opacity: 0.8; /* Opacidade padrão */
-            transition: opacity .2s; /* Transição suave na opacidade */
-        }
-        input[type="range"]:hover {
-            opacity: 1; /* Aumenta a opacidade ao passar o mouse */
-        }
-        /* Estilo para o "polegar" (thumb) do slider no WebKit (Chrome, Safari) */
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #fff; /* Cor branca, muda com .mustard-theme */
-            border-radius: 50%; /* Redondo */
-            cursor: pointer;
-            box-shadow: 0 0 8px #fff; /* Sombra branca, muda com .mustard-theme */
-            transition: background-color 0.5s ease, box-shadow 0.5s ease;
-        }
-        /* Estilo para o "polegar" (thumb) do slider no Firefox */
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: #fff; /* Cor branca, muda com .mustard-theme */
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 8px #fff; /* Sombra branca, muda com .mustard-theme */
-            transition: background-color 0.5s ease, box-shadow 0.5s ease;
-        }
-        /* Estilo para botões de controle (play/pause, volume) */
-        button {
-            background-color: #000; /* Fundo preto */
-            color: #fff; /* Cor do texto branca, muda com .mustard-theme */
-            padding: 10px 15px;
-            border: 1px solid #fff; /* Borda branca, muda com .mustard-theme */
-            border-radius: 10px; /* Cantos arredondados */
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.1s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; /* Transições suaves */
-            box-shadow: 0 0 5px #fff; /* Sombra branca, muda com .mustard-theme */
-            display: flex; /* Para centralizar o SVG */
-            align-items: center;
-            justify-content: center;
-        }
-        button:hover {
-            background-color: rgba(255, 255, 255, 0.1); /* Cor de fundo branca semi-transparente ao passar o mouse, muda com .mustard-theme */
-            transform: translateY(-1px); /* Leve movimento para cima */
-        }
-        button:active {
-            transform: translateY(1px); /* Leve movimento para baixo ao clicar */
-            box-shadow: none; /* Remove a sombra ao clicar */
-        }
-
-        /* Estilo específico para o botão de limpar efeitos */
-        #clear-effects-button {
-            border-radius: 0;
-            box-shadow: none;
-        }
+        button { background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-color); padding: 10px; font-family: 'Silkscreen', cursive; font-size: 11px; border-radius: 4px; cursor: pointer; transition: 0.2s, border-color 0.5s ease, color 0.5s ease; display: flex; align-items: center; justify-content: center; width: 100%; text-transform: uppercase; }
+        button:hover { background: rgba(255,255,255,0.15); }
         
-        /* Estilo para o novo botão de alternância do modo de reprodução */
-        #reverse-button {
-            border-radius: 50%; /* Torna o botão redondo */
-            width: 50px;
-            height: 50px;
-            padding: 0;
-            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5); /* Sombra mais suave */
-            background-color: transparent;
-        }
-        #reverse-button:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            transform: scale(1.05);
-        }
+        #p1-play-btn svg, #p1-reverse-btn svg { fill: var(--highlight-color); transition: transform 0.3s ease, fill 0.5s ease; }
+        #p1-volume-icon { fill: var(--highlight-color); transition: fill 0.5s ease; }
 
-        /* Estilo para ícones SVG dentro dos botões */
-        button svg {
-            fill: #fff; /* Cor do ícone SVG branca, muda com .mustard-theme */
-            width: 24px; /* Tamanho do ícone */
-            height: 24px;
-            transition: fill 0.5s ease;
-        }
+        input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; height: 20px; padding: 0; margin: 0; border: none; }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: var(--border-color); border-radius: 2px; transition: background-color 0.5s ease; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 14px; width: 14px; background: var(--highlight-color); border-radius: 50%; margin-top: -5px; box-shadow: 0 0 5px rgba(0,0,0,0.5); cursor: pointer; transition: background 0.5s ease; }
+        
+        #p1-mini-container { flex-grow: 0; height: 30px; margin-top: auto; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; width: 100%; position: relative; transition: border-color 0.5s ease; }
+        #p1-mini-canvas { width: 100%; height: 100%; display: block; }
+        
+        input[type="color"] { width: 100%; height: 30px; border: 1px solid var(--border-color); background: transparent; padding: 0; border-radius: 4px; cursor: pointer; transition: border-color 0.5s ease; }
 
-        /* Estilo para o novo botão de alternância do menu */
-        #toggle-controls-button {
-            position: fixed; /* Posição fixa na tela */
-            bottom: 20px; /* Alinha com a parte inferior do menu */
-            left: 50%; /* Centraliza horizontalmente */
-            transform: translateX(-50%); /* Ajusta para sua própria largura */
-            width: 50px; /* Largura do botão */
-            height: 50px; /* Altura do botão */
-            background: rgba(0, 0, 0, 0.8); /* Fundo preto semi-transparente */
-            backdrop-filter: blur(10px); /* Efeito de desfoque */
-            border: 1px solid #fff; /* Borda branca, muda com .mustard-theme */
-            border-radius: 50%; /* Torna o botão redondo */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            z-index: 3; /* Garante que ele esteja acima do menu */
-            box-shadow: 0 0 5px #fff; /* Sombra branca, muda com .mustard-theme */
-            transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; /* Transição suave */
-        }
-        #toggle-controls-button.hidden {
-            opacity: 0;
-            pointer-events: none; /* Desabilita cliques quando escondido */
-        }
-        #toggle-controls-button:hover {
-            background-color: rgba(255, 255, 255, 0.1); /* Muda com .mustard-theme */
-            transform: translateX(-50%) translateY(-2px); /* Leve movimento para cima ao passar o mouse */
-        }
-        #toggle-controls-button:active {
-            transform: translateX(-50%) translateY(0); /* Retorna à posição original ao clicar */
-            box-shadow: none;
-        }
-
-        /* Estilos da classe .mustard-theme para mudar as cores para amarelo mostarda */
-        body.mustard-theme #ganwalk-text {
-            color: #E1AD01;
-        }
-        body.mustard-theme .ganwalk-neon-glow {
-            text-shadow: 0 0 10px rgba(225, 173, 1, 0.8), 0 0 20px rgba(225, 173, 1, 0.6), 0 0 30px rgba(225, 173, 1, 0.4), 0 0 40px rgba(225, 173, 1, 0.2);
-        }
-        body.mustard-theme @keyframes glitch-effect {
-            0% { text-shadow: 2px 2px 10px rgba(255, 0, 0, 0.8), -2px -2px 10px rgba(0, 255, 255, 0.6); transform: translate(-2px, 2px); }
-            10% { text-shadow: -2px 2px 10px rgba(0, 255, 0, 0.8), 2px -2px 10px rgba(255, 0, 255, 0.6); transform: translate(2px, -2px); }
-            20% { text-shadow: 0 0 10px rgba(225, 173, 1, 0.8), 0 0 20px rgba(225, 173, 1, 0.6); transform: translate(0, 0); }
-            30% { text-shadow: 1px -1px 8px rgba(0, 0, 255, 0.7), -1px 1px 8px rgba(255, 255, 0, 0.7); transform: translate(1px, -1px); }
-            40% { text-shadow: 0 0 10px rgba(225, 173, 1, 0.8), 0 0 20px rgba(225, 173, 1, 0.6); transform: translate(0, 0); }
-            50% { text-shadow: 0 0 10px rgba(225, 173, 1, 0.8), 0 0 20px rgba(225, 173, 1, 0.6); transform: translate(0, 0); }
-            60% { text-shadow: -1px -1px 10px rgba(255, 100, 0, 0.8), 1px 1px 10px rgba(0, 255, 255, 0.6); transform: translate(1px, 1px); }
-            70% { text-shadow: 0 0 10px rgba(225, 173, 1, 0.8), 0 0 20px rgba(225, 173, 1, 0.6); transform: translate(0, 0); }
-            80% { text-shadow: 2px 0 8px rgba(255, 0, 100, 0.7), -2px 0 8px rgba(0, 255, 150, 0.7); transform: translate(-2px, 0); }
-            90% { text-shadow: 0 0 10px rgba(225, 173, 1, 0.8), 0 0 20px rgba(225, 173, 1, 0.6); transform: translate(0, 0); }
-            100% { text-shadow: 0 0 10px rgba(225, 173, 1, 0.8), 0 0 20px rgba(225, 173, 1, 0.6); transform: translate(0, 0); }
-        }
-        body.mustard-theme @keyframes faça-flicker {
-            0%, 100% { text-shadow: 0 0 5px #E1AD01, 0 0 10px #E1AD01, 0 0 20px #E1AD01; }
-            50% { text-shadow: 0 0 2px #E1AD01, 0 0 5px #E1AD01, 0 0 10px #E1AD01; }
-        }
-        body.mustard-theme #controls-bar {
-            box-shadow: 0 4px 30px rgba(225, 173, 1, 0.5);
-            border: 1px solid #E1AD01;
-        }
-        body.mustard-theme #progress-time-display,
-        body.mustard-theme .control-group label {
-            color: #E1AD01;
-        }
-        body.mustard-theme input[type="range"]::-webkit-slider-thumb {
-            background: #E1AD01;
-            box-shadow: 0 0 8px #E1AD01;
-        }
-        body.mustard-theme input[type="range"]::-moz-range-thumb {
-            background: #E1AD01;
-            box-shadow: 0 0 8px #E1AD01;
-        }
-        body.mustard-theme button {
-            color: #E1AD01;
-            border: 1px solid #E1AD01;
-            box-shadow: 0 0 5px #E1AD01;
-        }
-        body.mustard-theme button:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        body.mustard-theme button svg {
-            fill: #E1AD01;
-        }
-        body.mustard-theme #toggle-controls-button {
-            border: 1px solid #E1AD01;
-            box-shadow: 0 0 5px #E1AD01;
-        }
-        body.mustard-theme #toggle-controls-button:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        body.mustard-theme #toggle-controls-button svg {
-            fill: #E1AD01;
+        @media (max-width: 768px) {
+            #p1-main-text { font-size: 15vw !important; }
+            #p1-controls-bar { width: 95vw; bottom: 75px; padding: 15px; max-height: 70vh; overflow-y: auto; }
+            .controls-grid { grid-template-columns: 1fr; }
+            #p1-interaction-tooltip { transform: translate(20px, -80px); }
         }
     </style>
 </head>
 <body>
-    <div id="visualizer-container">
-        <!-- Texto "GANWALK II" -->
-        <div id="ganwalk-text">GANWALK II</div>
-        <!-- Frase para iniciar a visualização -->
-        <div id="click-to-start-text" class="loading">Áudio carregando</div>
-        <!-- Canvas para a renderização 3D do Three.js -->
-        <canvas id="visualizerCanvas"></canvas>
 
-        <!-- Barra de controles do reprodutor de música -->
-        <div id="controls-bar" class="hidden">
-            <!-- Controles principais: Play/Pause, Volume, Progresso e Reverso -->
-            <div class="main-controls">
-                <button id="play-pause-button">
-                    <!-- Ícone SVG de Play -->
-                    <svg viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                    </svg>
-                </button>
-                <!-- NOVO: Botão para alternar entre modo normal e reverso -->
-                <button id="reverse-button">
-                    <!-- Ícone de reverso fornecido pelo usuário -->
-                    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="512" x="0" y="0" viewBox="0 0 612.268 612.268" style="enable-background:new 0 0 512 512" xml:space="preserve" class=""><g><path d="M593.011 382.796H401.785c-10.556 0-19.123 8.567-19.123 19.123s10.001 17.937 18.167 26.083l53.142 53.142c-39.909 33.848-91.387 54.462-147.837 54.462-113.665 0-207.786-82.744-226.029-191.227H2.811c18.855 150.878 147.32 267.717 303.323 267.717 77.58 0 148.296-28.99 202.164-76.624l54.786 54.786c10.308 10.307 19.371 22.01 29.927 22.01s19.123-8.567 19.123-19.123V401.919c0-2.314 0-19.123-19.123-19.123zM19.256 229.471h191.226c10.556 0 19.123-8.567 19.123-19.123s-10.001-17.937-18.167-26.083l-53.142-53.142c39.909-33.847 91.387-54.461 147.837-54.461 113.665 0 207.786 82.744 226.029 191.226h77.293C590.602 117.011 462.136.172 306.134.172c-77.581 0-148.296 28.99-202.164 76.625L49.183 22.01C38.876 11.703 29.812 0 19.256 0S.134 8.567.134 19.123v191.226c0 2.314 0 19.122 19.122 19.122z" fill="#ffffff" opacity="1" data-original="#000000" class=""></path></g></svg>
-                </button>
-                <div class="progress-bar-container">
-                    <input type="range" id="progress-slider" min="0" max="0" step="0.1" value="0">
-                    <span id="progress-time-display">0:00</span>
-                </div>
-                <div class="control-group volume-control">
-                    <!-- Ícone SVG para Volume -->
-                    <svg id="volume-icon" viewBox="0 0 24 24" width="24" height="24" fill="white">
-                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.81 5 3.54 5 6.71s-2.11 5.9-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-                    </svg>
-                    <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.1">
-                </div>
-            </div>
-            <!-- Controles de efeitos de áudio -->
-            <div class="effects-controls">
-                <div class="control-group">
-                    <label for="delay-slider">Eco Profundo</label>
-                    <input type="range" id="delay-slider" min="0" max="1" step="0.01" value="0">
-                </div>
-                <div class="control-group">
-                    <label for="reverb-slider">Câmara Etérea</label>
-                    <input type="range" id="reverb-slider" min="0" max="1" step="0.01" value="0">
-                </div>
-                <div class="control-group">
-                    <label for="filter-freq-slider">Véu Sonoro</label>
-                    <input type="range" id="filter-freq-slider" min="0" max="100" step="1" value="0">
-                </div>
-                <div class="control-group">
-                    <label for="chorus-slider">Coro Astral</label>
-                    <input type="range" id="chorus-slider" min="0" max="1" step="0.01" value="0">
-                </div>
-                <div class="control-group">
-                    <label for="overdrive-slider">Distorção Cósmica</label>
-                    <input type="range" id="overdrive-slider" min="0" max="1" step="0.01" value="0">
-                </div>
-                <!-- NOVO EFEITO: Pitch -->
-                <div class="control-group">
-                    <label for="pitch-slider">Tom</label>
-                    <input type="range" id="pitch-slider" min="0.1" max="2" step="0.01" value="1">
-                </div>
-                <!-- NOVO EFEITO: Equalizador - Graves -->
-                <div class="control-group">
-                    <label for="low-eq-slider">Graves</label>
-                    <input type="range" id="low-eq-slider" min="-20" max="20" step="1" value="0">
-                </div>
-                <!-- NOVO EFEITO: Equalizador - Médios -->
-                <div class="control-group">
-                    <label for="mid-eq-slider">Médios</label>
-                    <input type="range" id="mid-eq-slider" min="-20" max="20" step="1" value="0">
-                </div>
-                <!-- NOVO EFEITO: Equalizador - Agudos -->
-                <div class="control-group">
-                    <label for="high-eq-slider">Agudos</label>
-                    <input type="range" id="high-eq-slider" min="-20" max="20" step="1" value="0">
-                </div>
-            </div>
-            <!-- Botão Limpar Efeitos -->
-            <button id="clear-effects-button" class="mt-4 px-6 py-3 bg-black border border-white hover:bg-neutral-800 text-white font-semibold">Limpar Efeitos</button>
+    <!-- MARQUEE NO TOPO -->
+    <a href="https://ditto.fm/calma-ganwalk" target="_blank" id="top-marquee">
+        <div class="marquee-content">
+            <span>LANÇAMENTO DIA 05.04.2026 - FAÇA O PRÉ-SAVE AGORA ///&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            <span>LANÇAMENTO DIA 05.04.2026 - FAÇA O PRÉ-SAVE AGORA ///&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            <span>LANÇAMENTO DIA 05.04.2026 - FAÇA O PRÉ-SAVE AGORA ///&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            <span>LANÇAMENTO DIA 05.04.2026 - FAÇA O PRÉ-SAVE AGORA ///&nbsp;&nbsp;&nbsp;&nbsp;</span>
         </div>
+    </a>
 
-        <!-- NOVO: Botão para mostrar/esconder o menu de controles -->
-        <div id="toggle-controls-button" class="hidden">
-            <svg id="arrow-icon" viewBox="0 0 24 24" width="24" height="24" fill="white">
-                <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
-            </svg>
-        </div>
+    <!-- LOADING -->
+    <div id="global-loader">
+        <div id="loader-title">GANWALK</div>
+        <div id="click-to-start-text" class="loading">Iniciando sistemas</div>
     </div>
 
+    <!-- EXP 1 -->
+    <section id="experience-1" class="screen-section">
+        <div id="p1-container">
+            <div id="p1-main-text">GANWALK</div>
+            <div id="p1-interaction-tooltip">
+                <div class="tooltip-line"></div><div class="tooltip-text">Interaja</div>
+            </div>
+            <canvas id="p1-canvas"></canvas>
+
+            <div id="p1-controls-bar">
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <label>Reprodução</label>
+                        <div style="display:flex; gap:10px; background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; border:1px solid var(--border-color); transition: border-color 0.5s ease;">
+                            <button id="p1-play-btn" style="width:40px; height:40px; border-radius:50%; padding:0; flex-shrink:0;"><svg viewBox="0 0 24 24" width="24"><path d="M8 5v14l11-7z"/></svg></button>
+                            <button id="p1-reverse-btn" style="width:40px; height:40px; border-radius:50%; padding:0; flex-shrink:0;"><svg viewBox="0 0 24 24" width="24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+                            <div style="flex-grow:1; display:flex; flex-direction:column; gap:4px;">
+                                <input type="range" id="p1-progress" min="0" step="0.1" value="0">
+                                <span id="p1-time-display" style="font-size:11px; color:var(--text-color); align-self:flex-end; font-family:'Silkscreen'; transition: color 0.5s ease;">0:00</span>
+                            </div>
+                        </div>
+                        <label>Volume</label>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <svg id="p1-volume-icon" viewBox="0 0 24 24" width="20" height="20"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.81 5 3.54 5 6.71s-2.11 5.9-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                            <input type="range" id="p1-volume" min="0" max="1" step="0.01" value="0.5">
+                        </div>
+                        <div id="p1-mini-container"><canvas id="p1-mini-canvas"></canvas></div>
+                    </div>
+                    <div class="control-group">
+                        <label>Eco Profundo</label><input type="range" id="p1-delay" min="0" max="1" step="0.01" value="0">
+                        <label>Câmara Etérea (Rastro)</label><input type="range" id="p1-reverb" min="0" max="1" step="0.01" value="0">
+                        <label>Oscilador de Realidades</label><input type="range" id="p1-chorus" min="0" max="1" step="0.01" value="0">
+                        <label>Véu Sonoro</label><input type="range" id="p1-filter" min="0" max="100" step="1" value="0">
+                    </div>
+                    <div class="control-group">
+                        <label>Distorção Cósmica</label><input type="range" id="p1-overdrive" min="0" max="1" step="0.01" value="0">
+                        <label>Tom (Velocidade)</label><input type="range" id="p1-pitch" min="0.1" max="2" step="0.01" value="1">
+                        <label>EQ (L/M/H)</label>
+                        <div style="display:flex; gap:10px;">
+                            <input type="range" id="p1-eq-low" min="-20" max="20" value="0">
+                            <input type="range" id="p1-eq-mid" min="-20" max="20" value="0">
+                            <input type="range" id="p1-eq-high" min="-20" max="20" value="0">
+                        </div>
+                        <div style="display:flex; gap:10px; width:100%; margin-top:auto;">
+                            <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end;"><label>Cor Fundo</label><input type="color" id="p1-bg-color" value="#000000"></div>
+                            <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end;"><label>Cor Foco</label><input type="color" id="p1-fg-color" value="#ffffff"></div>
+                        </div>
+                    </div>
+                </div>
+                <button id="p1-clear-effects" style="margin-top:20px; width:100%;">Limpar Efeitos</button>
+            </div>
+            <div id="p1-toggle-button">
+                <svg id="p1-toggle-arrow" viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+            </div>
+        </div>
+    </section>
+
     <script>
-        // Variáveis globais para Three.js e Web Audio API
-        let scene, camera, renderer;
-        let audioContext, analyser, sourceNode;
-        // Efeitos de áudio
-        let gainNode, delayNode, convolverNode, filterNode, overdriveNode, chorusNode, eqNodes;
-        let reverbGain, chorusGain; // Variável global para o ganho do reverb e chorus
-        
-        // Web Audio API: buffers de áudio
-        let originalBuffer, reversedBuffer;
-        
-        // Variáveis para a visualização de linhas e formas
-        let visualGroup; // Grupo para conter todas as formas e linhas
-        let centralShape; // A forma central (icosaedro)
-        let gridGroup; // NOVO: Grupo para conter as linhas da grade
-        const gridLines = []; // Array para armazenar as linhas da grade
-        let waveLinesGroup; // Grupo para as linhas de onda
-        const waveLines = []; // Array para armazenar as linhas de onda
-
-        // Referências aos elementos do DOM
-        const clickToStartText = document.getElementById('click-to-start-text');
-        const playPauseButton = document.getElementById('play-pause-button');
-        const reverseButton = document.getElementById('reverse-button'); // NOVO: Botão de reverso
-        const progressSlider = document.getElementById('progress-slider');
-        const progressTimeDisplay = document.getElementById('progress-time-display');
-        const volumeSlider = document.getElementById('volume-slider');
-        const delaySlider = document.getElementById('delay-slider');
-        const reverbSlider = document.getElementById('reverb-slider');
-        const filterFreqSlider = document.getElementById('filter-freq-slider');
-        const chorusSlider = document.getElementById('chorus-slider');
-        const overdriveSlider = document.getElementById('overdrive-slider');
-        const pitchSlider = document.getElementById('pitch-slider');
-        const lowEqSlider = document.getElementById('low-eq-slider');
-        const midEqSlider = document.getElementById('mid-eq-slider');
-        const highEqSlider = document.getElementById('high-eq-slider');
-        const controlsBar = document.getElementById('controls-bar');
-        const ganwalkText = document.getElementById('ganwalk-text');
-        const volumeIcon = document.getElementById('volume-icon');
-        const clearEffectsButton = document.getElementById('clear-effects-button');
-        const toggleControlsButton = document.getElementById('toggle-controls-button');
-
-        // Variáveis de estado
-        let isPlaying = false;
-        let isSeeking = false;
-        let colorChangedTriggered = false;
-        let isReversed = false;
-        let startTime = 0;
-        let pausedTime = 0;
-
-        // Definindo a cor amarela mostarda
-        const mustardYellowHex = 0xE1AD01;
-        const mustardYellowThree = new THREE.Color(mustardYellowHex);
-        const whiteThree = new THREE.Color(0xffffff);
-        
-        // --- Funções de Inicialização ---
-
-        /**
-         * Inicializa a cena, câmera, renderizador e elementos visuais do Three.js.
-         */
-        function initThreeJS() {
-            const canvas = document.getElementById('visualizerCanvas');
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 50;
-            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setClearColor(0x000000, 1);
-
-            // Grupo para a visualização principal (icosaedro e linhas de onda)
-            visualGroup = new THREE.Group(); 
-            visualGroup.position.y = 12;
-            scene.add(visualGroup);
-
-            const icosahedronGeometry = new THREE.IcosahedronGeometry(8, 0);
-            const icosahedronMaterial = new THREE.MeshBasicMaterial({ color: whiteThree, wireframe: true, transparent: true, opacity: 0 });
-            centralShape = new THREE.Mesh(icosahedronGeometry, icosahedronMaterial);
-            visualGroup.add(centralShape);
-
-            // NOVO: Grupo para a grade, mantendo-a estática e centralizada
-            gridGroup = new THREE.Group();
-            gridGroup.position.y = 12;
-            scene.add(gridGroup);
-            
-            const gridSize = 30;
-            const lineMaterial = new THREE.LineBasicMaterial({ color: whiteThree, linewidth: 1, transparent: true, opacity: 0 });
-            for (let i = 0; i <= gridSize; i++) {
-                const points = [];
-                for (let j = 0; j <= gridSize; j++) {
-                    points.push(new THREE.Vector3(j - gridSize / 2, i - gridSize / 2, 0));
-                }
-                const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                geometry.setAttribute('initialPosition', geometry.attributes.position.clone());
-                const line = new THREE.Line(geometry, lineMaterial.clone());
-                gridGroup.add(line); // Adiciona ao novo grupo da grade
-                gridLines.push(line);
-            }
-            for (let i = 0; i <= gridSize; i++) {
-                const points = [];
-                for (let j = 0; j <= gridSize; j++) {
-                    points.push(new THREE.Vector3(i - gridSize / 2, j - gridSize / 2, 0));
-                }
-                const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                geometry.setAttribute('initialPosition', geometry.attributes.position.clone());
-                const line = new THREE.Line(geometry, lineMaterial.clone());
-                gridGroup.add(line); // Adiciona ao novo grupo da grade
-                gridLines.push(line);
-            }
-
-            waveLinesGroup = new THREE.Group();
-            waveLinesGroup.position.y = -25;
-            scene.add(waveLinesGroup);
-
-            const waveLineLength = 70;
-            const waveLineResolution = 100;
-
-            const bassLineMaterial = new THREE.LineBasicMaterial({ color: whiteThree, linewidth: 1, transparent: true, opacity: 0 });
-            const bassPoints = [];
-            for (let j = 0; j <= waveLineResolution; j++) {
-                const x = (j / waveLineResolution - 0.5) * waveLineLength;
-                bassPoints.push(new THREE.Vector3(x, -1, 0));
-            }
-            const bassGeometry = new THREE.BufferGeometry().setFromPoints(bassPoints);
-            bassGeometry.setAttribute('initialPosition', bassGeometry.attributes.position.clone());
-            const bassLine = new THREE.Line(bassGeometry, bassLineMaterial);
-            waveLinesGroup.add(bassLine);
-            waveLines.push(bassLine);
-
-            const midLineMaterial = new THREE.LineBasicMaterial({ color: whiteThree, linewidth: 1, transparent: true, opacity: 0 });
-            const midPoints = [];
-            for (let j = 0; j <= waveLineResolution; j++) {
-                const x = (j / waveLineResolution - 0.5) * waveLineLength;
-                midPoints.push(new THREE.Vector3(x, 0, 0));
-            }
-            const midGeometry = new THREE.BufferGeometry().setFromPoints(midPoints);
-            midGeometry.setAttribute('initialPosition', midGeometry.attributes.position.clone());
-            const midLine = new THREE.Line(midGeometry, midLineMaterial);
-            waveLinesGroup.add(midLine);
-            waveLines.push(midLine);
-
-            const highLineMaterial = new THREE.LineBasicMaterial({ color: whiteThree, linewidth: 1, transparent: true, opacity: 0 });
-            const highPoints = [];
-            for (let j = 0; j <= waveLineResolution; j++) {
-                const x = (j / waveLineResolution - 0.5) * waveLineLength;
-                highPoints.push(new THREE.Vector3(x, 1, 0));
-            }
-            const highGeometry = new THREE.BufferGeometry().setFromPoints(highPoints);
-            highGeometry.setAttribute('initialPosition', highGeometry.attributes.position.clone());
-            const highLine = new THREE.Line(highGeometry, highLineMaterial);
-            waveLinesGroup.add(highLine);
-            waveLines.push(highLine);
-
-            window.addEventListener('resize', onWindowResize);
+        function showMarquee() {
+            document.getElementById('top-marquee').classList.add('visible');
         }
 
-        /**
-         * Ajusta o tamanho do renderizador e a proporção da câmera.
-         */
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            ganwalkText.style.fontSize = (10 * (window.innerWidth / 100)) + 'px';
-        }
-        
-        /**
-         * Inicializa a cadeia de áudio do Web Audio API.
-         */
-        function initAudio() {
-            try {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            } catch (e) {
-                console.error("Web Audio API não é suportado neste navegador.", e);
-                clickToStartText.textContent = "Erro: Web Audio API não suportado.";
-                return;
-            }
-
-            // Criar nós de áudio
-            analyser = audioContext.createAnalyser();
-            analyser.fftSize = 256;
-
-            gainNode = audioContext.createGain();
-            gainNode.gain.value = 0.1;
-
-            delayNode = audioContext.createDelay(2.0); // 2 segundos de delay máximo
-            let feedback = audioContext.createGain();
-            feedback.gain.value = 0.5;
-            delayNode.delayTime.value = 0;
-            delayNode.connect(feedback);
-            feedback.connect(delayNode);
-
-            // Reverb com ConvolverNode e uma resposta de impulso
-            convolverNode = audioContext.createConvolver();
-            convolverNode.buffer = createImpulseResponse(audioContext);
-            reverbGain = audioContext.createGain();
-            reverbGain.gain.value = 0;
-
-            filterNode = audioContext.createBiquadFilter();
-            filterNode.type = "lowpass";
-            filterNode.frequency.value = 20000;
+        const App1 = {
+            scene: null, camera: null, renderer: null, composer: null, bloomPass: null,
+            fadeScene: null, fadeCamera: null, fadeMesh: null,
+            audioContext: null, analyser: null, sourceNode: null,
+            gainNode: null, eqNodes: {}, overdriveNode: null, filterNode: null,
+            interactionPanner: null, interactionFilter: null, interactionHighpass: null,
+            chorusNode: null, chorusGain: null,
+            delayNode: null, feedbackNode: null, convolverNode: null, reverbGain: null,
+            masterFilter: null,
             
-            overdriveNode = audioContext.createWaveShaper();
-            overdriveNode.curve = makeDistortionCurve(0);
-
-            // Chorus com PannerNode e oscilador
-            chorusNode = audioContext.createPanner();
-            let chorusOsc = audioContext.createOscillator();
-            chorusGain = audioContext.createGain();
-            chorusGain.gain.value = 0;
-            chorusOsc.frequency.value = 4;
-            chorusOsc.type = 'sine';
-            chorusOsc.connect(chorusGain);
-            chorusGain.connect(chorusNode.positionX);
-            chorusOsc.start(0);
+            buffer: null, reversedBuffer: null,
+            visualGroup: null, centralShape: null, gridLines: [], waveLines: [], waveLinesGroup: null,
             
-            // Equalizador de 3 bandas
-            eqNodes = {
-                low: audioContext.createBiquadFilter(),
-                mid: audioContext.createBiquadFilter(),
-                high: audioContext.createBiquadFilter()
-            };
-            eqNodes.low.type = "lowshelf";
-            eqNodes.low.frequency.value = 320;
-            eqNodes.mid.type = "peaking";
-            eqNodes.mid.frequency.value = 1000;
-            eqNodes.high.type = "highshelf";
-            eqNodes.high.frequency.value = 3200;
+            isPlaying: false, isReversed: false,
+            startTime: 0, pausedTime: 0,
+            isActive: false, animationId: null,
+            transitionTimer: null,
+            menuTimeout: null,
 
-            // Conectando a cadeia de áudio
-            gainNode.connect(eqNodes.low);
-            eqNodes.low.connect(eqNodes.mid);
-            eqNodes.mid.connect(eqNodes.high);
-            eqNodes.high.connect(delayNode);
-            eqNodes.high.connect(filterNode);
-            eqNodes.high.connect(overdriveNode);
-            eqNodes.high.connect(chorusNode);
-            eqNodes.high.connect(analyser); // Analisador conectado antes da saída final
+            mouse: new THREE.Vector2(), raycaster: new THREE.Raycaster(),
+            isDragging: false, dragMode: 'none', prevMouse: {x:0, y:0},
+            isScrubbing: false, lastScrub: 0, wasPlayingBeforeScrub: false, userHasInteracted: false,
             
-            // Conexões de efeitos
-            delayNode.connect(analyser);
-            filterNode.connect(analyser);
-            overdriveNode.connect(analyser);
-            chorusNode.connect(analyser);
+            targetWaveY: -25, targetWaveScale: 1, colorChangedTriggered: false,
+            hasStartedOnce: false,
+
+            bgColor: '#000000', fgColor: '#ffffff',
+            bgThree: new THREE.Color(0x000000), fgThree: new THREE.Color(0xffffff),
             
-            delayNode.connect(audioContext.destination);
-            filterNode.connect(audioContext.destination);
-            overdriveNode.connect(audioContext.destination);
-            chorusNode.connect(audioContext.destination);
-            
-            // Conexão do Reverb (paralela)
-            eqNodes.high.connect(convolverNode);
-            convolverNode.connect(reverbGain);
-            reverbGain.connect(analyser);
-            reverbGain.connect(audioContext.destination);
-            
-            analyser.connect(audioContext.destination);
+            mustardYellowThree: new THREE.Color(0xE1AD01),
 
-            setupEventListeners();
-        }
+            hex2rgb: function(h) { const b=parseInt(h.slice(1),16); return {r:(b>>16)&255,g:(b>>8)&255,b:b&255}; },
 
-        /**
-         * Cria uma curva de distorção para o WaveShaperNode.
-         */
-        function makeDistortionCurve(amount) {
-            let k = typeof amount === 'number' ? amount : 50;
-            let n_samples = 44100;
-            let curve = new Float32Array(n_samples);
-            let deg = Math.PI / 180;
-            for (let i = 0; i < n_samples; ++i) {
-                let x = i * 2 / n_samples - 1;
-                curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
-            }
-            return curve;
-        }
-
-        /**
-         * Cria uma resposta de impulso para o Reverb.
-         */
-        function createImpulseResponse(audioContext) {
-            let rate = audioContext.sampleRate;
-            let length = 2 * rate;
-            let impulse = audioContext.createBuffer(2, length, rate);
-            let impulseL = impulse.getChannelData(0);
-            let impulseR = impulse.getChannelData(1);
-            for (let i = 0; i < length; i++) {
-                let n = length - i;
-                impulseL[i] = Math.random() * (1 - n / length);
-                impulseR[i] = Math.random() * (1 - n / length);
-            }
-            return impulse;
-        }
-
-        /**
-         * Carrega a música e cria os buffers de áudio.
-         */
-        async function loadAudio() {
-            try {
-                const response = await fetch("https://audio.jukehost.co.uk/n7NGLDAosvHLu79pkZeSrCenu35K9PRV");
-                const arrayBuffer = await response.arrayBuffer();
-                originalBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                reversedBuffer = reverseAudioBuffer(originalBuffer);
-
-                progressSlider.max = originalBuffer.duration;
-                updateProgressTime(0); // Garante que a minutagem inicial seja 0:00 / XX:XX
-            } catch (error) {
-                console.error("Erro ao carregar o áudio:", error);
-                clickToStartText.textContent = 'Erro ao carregar áudio';
-                clickToStartText.style.color = 'red';
-            } finally {
-                clickToStartText.classList.remove('loading');
-                if (originalBuffer) {
-                    clickToStartText.innerHTML = 'Clique, ouça e <span class="faça-glow">faça</span>.';
-                    clickToStartText.style.cursor = 'pointer';
-                }
-            }
-        }
-
-        /**
-         * Reverte um AudioBuffer.
-         */
-        function reverseAudioBuffer(buffer) {
-            let reversed = audioContext.createBuffer(
-                buffer.numberOfChannels,
-                buffer.length,
-                buffer.sampleRate
-            );
-            for (let i = 0; i < buffer.numberOfChannels; i++) {
-                let originalChannel = buffer.getChannelData(i);
-                let reversedChannel = reversed.getChannelData(i);
-                for (let j = 0; j < originalChannel.length; j++) {
-                    reversedChannel[j] = originalChannel[originalChannel.length - 1 - j];
-                }
-            }
-            return reversed;
-        }
-
-        /**
-         * Formata segundos para o formato "mm:ss".
-         */
-        function formatTime(seconds) {
-            const safeSeconds = Math.max(0, seconds);
-            const minutes = Math.floor(safeSeconds / 60);
-            const remainingSeconds = Math.floor(safeSeconds % 60);
-            return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds.toFixed(0)}`;
-        }
-        
-        /**
-         * Atualiza o tempo de progresso exibido.
-         */
-        function updateProgressTime(time) {
-            const totalTime = originalBuffer.duration;
-            progressTimeDisplay.textContent = `${formatTime(time)} / ${formatTime(totalTime)}`;
-        }
-
-        /**
-         * Configura todos os event listeners.
-         */
-        function setupEventListeners() {
-            playPauseButton.addEventListener('click', togglePlayPause);
-            reverseButton.addEventListener('click', toggleReverse); // NOVO: Listener para o botão de reverso
-            clearEffectsButton.addEventListener('click', resetEffects);
-
-            volumeSlider.addEventListener('input', (e) => {
-                const gain = parseFloat(e.target.value);
-                gainNode.gain.value = gain;
-                updateVolumeIcon(gain);
-            });
-            delaySlider.addEventListener('input', (e) => delayNode.delayTime.value = parseFloat(e.target.value));
-            reverbSlider.addEventListener('input', (e) => reverbGain.gain.value = parseFloat(e.target.value));
-            
-            filterFreqSlider.addEventListener('input', (e) => {
-                const sliderValue = parseFloat(e.target.value);
-                const minFreq = 20;
-                const maxFreq = 20000;
-                const logFreq = minFreq * Math.pow(maxFreq / minFreq, sliderValue / 100);
-                filterNode.frequency.value = logFreq;
-
-                const opacity = (100 - sliderValue) / 100 * 0.6;
-                gridLines.forEach(line => line.material.opacity = opacity);
-            });
-
-            chorusSlider.addEventListener('input', (e) => {
-                const wet = parseFloat(e.target.value);
-                chorusGain.gain.value = wet * 10;
-            });
-            overdriveSlider.addEventListener('input', (e) => overdriveNode.curve = makeDistortionCurve(parseFloat(e.target.value) * 1000));
-            pitchSlider.addEventListener('input', (e) => {
-                if (sourceNode) sourceNode.playbackRate.value = parseFloat(e.target.value);
-            });
-            lowEqSlider.addEventListener('input', (e) => eqNodes.low.gain.value = parseFloat(e.target.value));
-            midEqSlider.addEventListener('input', (e) => eqNodes.mid.gain.value = parseFloat(e.target.value));
-            highEqSlider.addEventListener('input', (e) => eqNodes.high.gain.value = parseFloat(e.target.value));
-
-            progressSlider.addEventListener('mousedown', () => isSeeking = true);
-            
-            // Lógica de seek corrigida:
-            progressSlider.addEventListener('mouseup', () => {
-                isSeeking = false;
-                const seekTime = parseFloat(progressSlider.value);
+            getInverseContrastColor: function(hex) {
+                const b_num = parseInt(hex.slice(1), 16);
+                const r = (b_num >> 16) & 255;
+                const g = (b_num >> 8) & 255;
+                const bl = b_num & 255;
                 
-                // Pausa o áudio de forma segura, sem acionar o evento 'onended'
-                if (isPlaying) {
-                    pauseAudio();
+                const lumaBg = 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+                
+                let invR = 255 - r;
+                let invG = 255 - g;
+                let invB = 255 - bl;
+                const lumaInv = 0.2126 * invR + 0.7152 * invG + 0.0722 * invB;
+                
+                if (Math.abs(lumaBg - lumaInv) < 80) {
+                    const isDark = lumaBg < 128;
+                    invR = isDark ? 255 : 0;
+                    invG = isDark ? 255 : 0;
+                    invB = isDark ? 255 : 0;
                 }
-                
-                // Reinicia a reprodução a partir do novo ponto de busca
-                startAudio(seekTime);
-                pausedTime = seekTime;
-                
-                // Atualiza o botão de play/pause
-                playPauseButton.innerHTML = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
-            });
-            progressSlider.addEventListener('input', (e) => {
-                if (isSeeking) {
-                    updateProgressTime(parseFloat(e.target.value));
-                }
-            });
+                return { hex: `rgb(${invR}, ${invG}, ${invB})`, r: invR, g: invG, b: invB };
+            },
 
-            // NOVO: Lógica de esconder o menu, corrigida para não esconder ao clicar em controles
-            document.addEventListener('click', (event) => {
-                // Verifique se o clique foi fora da barra de controles e do botão de alternância
-                const isClickOutsideControls = !controlsBar.contains(event.target);
-                const isClickOutsideToggleButton = !toggleControlsButton.contains(event.target);
-                
-                // Só esconda se a barra estiver visível E o clique for fora das áreas de controle
-                if (!controlsBar.classList.contains('hidden') && isClickOutsideControls && isClickOutsideToggleButton) {
-                    controlsBar.classList.add('hidden');
-                    toggleControlsButton.classList.remove('hidden');
-                    toggleControlsButton.querySelector('svg path').setAttribute('d', 'M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z');
-                    waveLines.forEach(line => line.material.opacity = 0.8);
-                }
-            });
+            init: async function() {
+                try { this.audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return; }
+                this.setupAudioGraph();
+                try {
+                    const res = await fetch("https://raw.githubusercontent.com/ganwalk/2026/main/intro.mp3");
+                    const ab = await res.arrayBuffer();
+                    this.buffer = await this.audioContext.decodeAudioData(ab);
+                    this.reversedBuffer = this.reverseBuffer(this.buffer);
+                    document.getElementById('p1-progress').max = this.buffer.duration;
+                } catch(e) {}
+                this.initThree();
+                this.setupUI();
+                this.setupInteraction();
+            },
 
-            toggleControlsButton.addEventListener('click', () => {
-                controlsBar.classList.remove('hidden');
-                toggleControlsButton.classList.add('hidden');
-                waveLines.forEach(line => line.material.opacity = 0);
-            });
-        }
+            setupAudioGraph: function() {
+                const ctx = this.audioContext;
+                this.analyser = ctx.createAnalyser(); this.analyser.fftSize = 256;
+                this.gainNode = ctx.createGain(); this.gainNode.gain.value = 0.5;
 
-        /**
-         * NOVO: Alterna o modo de reprodução para reverso ou normal.
-         */
-        function toggleReverse() {
-            if (!originalBuffer) return;
+                this.eqNodes = { low: ctx.createBiquadFilter(), mid: ctx.createBiquadFilter(), high: ctx.createBiquadFilter() };
+                this.eqNodes.low.type = "lowshelf"; this.eqNodes.low.frequency.value = 320;
+                this.eqNodes.mid.type = "peaking"; this.eqNodes.mid.frequency.value = 1000;
+                this.eqNodes.high.type = "highshelf"; this.eqNodes.high.frequency.value = 3200;
 
-            const wasPlaying = isPlaying;
+                this.overdriveNode = ctx.createWaveShaper(); this.overdriveNode.curve = null;
+                this.filterNode = ctx.createBiquadFilter(); this.filterNode.type = "lowpass"; this.filterNode.frequency.value = 20000;
+
+                this.interactionFilter = ctx.createBiquadFilter(); this.interactionFilter.type = "lowpass"; this.interactionFilter.frequency.value = 20000;
+                this.interactionHighpass = ctx.createBiquadFilter(); this.interactionHighpass.type = "highpass"; this.interactionHighpass.frequency.value = 20;
+                this.interactionPanner = ctx.createStereoPanner(); this.interactionPanner.pan.value = 0;
+
+                this.chorusNode = ctx.createPanner();
+                const chorusOsc = ctx.createOscillator(); chorusOsc.frequency.value = 4;
+                this.chorusGain = ctx.createGain(); this.chorusGain.gain.value = 0;
+                chorusOsc.connect(this.chorusGain); this.chorusGain.connect(this.chorusNode.positionX); chorusOsc.start(0);
+
+                this.delayNode = ctx.createDelay(2.0);
+                this.feedbackNode = ctx.createGain(); this.feedbackNode.gain.value = 0.5;
+                this.delayNode.connect(this.feedbackNode); this.feedbackNode.connect(this.delayNode);
+
+                this.convolverNode = ctx.createConvolver();
+                this.convolverNode.buffer = this.createImpulse();
+                this.reverbGain = ctx.createGain(); this.reverbGain.gain.value = 0;
+
+                this.masterFilter = ctx.createBiquadFilter();
+                this.masterFilter.type = "lowpass";
+                this.masterFilter.frequency.value = 20000;
+
+                this.gainNode.connect(this.eqNodes.low);
+                this.eqNodes.low.connect(this.eqNodes.mid);
+                this.eqNodes.mid.connect(this.eqNodes.high);
+                this.eqNodes.high.connect(this.overdriveNode);
+                this.overdriveNode.connect(this.filterNode);
+                this.filterNode.connect(this.interactionFilter);
+                this.interactionFilter.connect(this.interactionHighpass);
+                this.interactionHighpass.connect(this.interactionPanner);
+                this.interactionPanner.connect(this.chorusNode);
+
+                this.chorusNode.connect(this.analyser);
+                this.chorusNode.connect(this.delayNode); 
+                this.chorusNode.connect(this.convolverNode); this.convolverNode.connect(this.reverbGain);
+
+                this.analyser.connect(this.masterFilter);
+                this.delayNode.connect(this.masterFilter);
+                this.reverbGain.connect(this.masterFilter);
+
+                this.masterFilter.connect(ctx.destination);
+            },
             
-            // Pausa o áudio para re-inicializar
-            if (wasPlaying) {
-                pauseAudio();
-            }
+            setBackground: function(isBackground) {
+                if(!this.masterFilter) return;
+                const freq = isBackground ? 200 : 20000;
+                this.masterFilter.frequency.setTargetAtTime(freq, this.audioContext.currentTime, 0.5);
 
-            // Alterna a direção
-            isReversed = !isReversed;
-            
-            // Reinicia a reprodução a partir do ponto pausado
-            if (wasPlaying) {
-                startAudio(pausedTime);
-            }
-        }
-        
-        /**
-         * Cria e inicia um AudioBufferSourceNode.
-         * @param {number} [offset=0] - O tempo de início em segundos (no buffer original).
-         */
-        function startAudio(offset = 0) {
-            if (sourceNode) {
-                // Remove o ouvinte de 'onended' antes de parar, para evitar loops indesejados
-                sourceNode.onended = null;
-                sourceNode.stop();
-                sourceNode.disconnect();
-                sourceNode = null;
-            }
-        
-            sourceNode = audioContext.createBufferSource();
-            // Usa o buffer apropriado (normal ou reverso)
-            sourceNode.buffer = isReversed ? reversedBuffer : originalBuffer;
-            
-            // A taxa de reprodução é sempre positiva para evitar problemas de compatibilidade.
-            // A direção do áudio já é controlada pelo buffer.
-            sourceNode.playbackRate.value = parseFloat(pitchSlider.value);
-            sourceNode.connect(gainNode);
-
-            // Armazena o ponto de início correto no buffer selecionado.
-            // Se estiver no modo reverso, o ponto de início é o tempo final menos o offset.
-            const bufferOffset = isReversed ? sourceNode.buffer.duration - offset : offset;
-            
-            sourceNode.start(0, bufferOffset);
-            
-            // Armazena o tempo de início para o cálculo do progresso.
-            startTime = audioContext.currentTime - bufferOffset;
-            isPlaying = true;
-
-            // NOVO: Adiciona a lógica de loop que alterna a direção
-            sourceNode.onended = () => {
-                // Pausa o áudio para garantir que o contexto de áudio esteja limpo para a próxima reprodução
-                pauseAudio();
-                
-                // Alterna o modo de reprodução e reinicia
-                isReversed = !isReversed;
-                if (isReversed) {
-                    // Começa do fim em modo reverso
-                    startAudio(originalBuffer.duration);
+                if (isBackground) {
+                    this.isActive = false; 
+                    if (this.animationId) cancelAnimationFrame(this.animationId);
                 } else {
-                    // Começa do início em modo normal
-                    startAudio(0);
+                    if (this.isPlaying && !this.isActive) {
+                        this.isActive = true;
+                        this.animate(); 
+                    }
                 }
-            };
-        }
+            },
 
-        /**
-         * Pausa a reprodução.
-         */
-        function pauseAudio() {
-            if (sourceNode) {
-                // Remove o ouvinte 'onended' antes de parar para evitar o loop.
-                sourceNode.onended = null;
-                sourceNode.stop();
-                sourceNode.disconnect();
-                sourceNode = null;
-            }
-            // Calcula o tempo de reprodução decorrido no buffer atual.
-            const elapsedTime = audioContext.currentTime - startTime;
-            // O tempo pausado é o tempo correspondente no buffer original.
-            pausedTime = isReversed ? originalBuffer.duration - elapsedTime : elapsedTime;
-            isPlaying = false;
-        }
-
-        /**
-         * Alterna entre play e pause.
-         */
-        function togglePlayPause() {
-            if (isPlaying) {
-                pauseAudio();
-                playPauseButton.innerHTML = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
-            } else {
-                startAudio(pausedTime);
-                playPauseButton.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
-            }
-        }
-        
-        /**
-         * Atualiza o ícone de volume.
-         */
-        function updateVolumeIcon(volume) {
-            const iconPath = volume === 0
-                ? `<path d="M9 13H7v-2h2v2zm4 0h-2v-2h2v2zm4-2h-2v2h2v-2z"/><path d="M0 0h24v24H0z" fill="none"/>`
-                : `<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.81 5 3.54 5 6.71s-2.11 5.9-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>`;
-            volumeIcon.innerHTML = iconPath;
-        }
-
-        /**
-         * Reseta todos os efeitos de áudio e cores da UI.
-         */
-        function resetEffects() {
-            delaySlider.value = 0;
-            reverbSlider.value = 0;
-            filterFreqSlider.value = 0;
-            chorusSlider.value = 0;
-            overdriveSlider.value = 0;
-            pitchSlider.value = 1;
-            lowEqSlider.value = 0;
-            midEqSlider.value = 0;
-            highEqSlider.value = 0;
-            
-            delayNode.delayTime.value = 0;
-            reverbGain.gain.value = 0;
-            filterNode.frequency.value = 20000;
-            chorusGain.gain.value = 0;
-            overdriveNode.curve = makeDistortionCurve(0);
-            // Corrige o bug: agora a taxa de reprodução do nó de áudio também é redefinida
-            if (sourceNode) {
-                sourceNode.playbackRate.value = 1;
-            }
-            eqNodes.low.gain.value = 0;
-            eqNodes.mid.gain.value = 0;
-            eqNodes.high.gain.value = 0;
-            
-
-            document.body.classList.remove('mustard-theme');
-            centralShape.material.color.set(whiteThree);
-            centralShape.material.opacity = 1;
-
-            gridLines.forEach(line => {
-                line.material.color.set(whiteThree);
-                line.material.opacity = 0.6;
-                if (line.material.linewidth !== undefined) {
-                    line.material.linewidth = 1;
+            stopSourceOnly: function() {
+                this.isPlaying = false; 
+                if(this.sourceNode) { 
+                    this.sourceNode.onended = null; 
+                    try{this.sourceNode.stop();}catch(e){} 
+                    this.sourceNode.disconnect(); 
+                    this.sourceNode=null; 
                 }
-            });
-            waveLines.forEach(line => {
-                line.material.color.set(whiteThree);
-                line.material.opacity = 0.8;
-                if (line.material.linewidth !== undefined) {
-                    line.material.linewidth = 1;
+                document.getElementById('p1-play-btn').innerHTML='<svg viewBox="0 0 24 24" width="24"><path d="M8 5v14l11-7z"/></svg>';
+            },
+
+            restart: function() {
+                if(this.transitionTimer) clearTimeout(this.transitionTimer);
+                if(this.animationId) { cancelAnimationFrame(this.animationId); this.animationId = null; }
+                this.stopAudio();
+                this.pausedTime = 0;
+                this.isReversed = false;
+                document.getElementById('p1-reverse-btn').querySelector('svg').style.transform = 'scaleX(1)';
+                this.hasStartedOnce = false;
+                this.startAudio(0);
+            },
+
+            createImpulse: function() {
+                const len = this.audioContext.sampleRate * 2; const buf = this.audioContext.createBuffer(2, len, this.audioContext.sampleRate);
+                for(let i=0;i<len;i++) { buf.getChannelData(0)[i]=Math.random()*(1-i/len); buf.getChannelData(1)[i]=Math.random()*(1-i/len); }
+                return buf;
+            },
+
+            makeDistortionCurve: function(amount) {
+                if(amount===0) return null;
+                const k=amount, n=44100, c=new Float32Array(n);
+                const deg=Math.PI/180;
+                for(let i=0;i<n;i++){ const x=i*2/n-1; c[i]=(3+k)*x*20*deg/(Math.PI+k*Math.abs(x)); }
+                return c;
+            },
+
+            reverseBuffer: function(buf) {
+                const newBuf = this.audioContext.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
+                for(let i=0; i<buf.numberOfChannels; i++) {
+                    const orig=buf.getChannelData(i), dest=newBuf.getChannelData(i);
+                    for(let j=0;j<orig.length;j++) dest[j]=orig[orig.length-1-j];
                 }
-            });
-            colorChangedTriggered = false;
-            renderer.setClearColor(0x000000, 1);
-        }
+                return newBuf;
+            },
 
-        /**
-         * Loop principal de animação.
-         */
-        function animate() {
-            requestAnimationFrame(animate);
-            let overallAvg = 0;
-            let bassAvg = 0;
-            let midAvg = 0;
-            let highAvg = 0;
-            
-            // Variável para armazenar o tempo atual do áudio
-            let currentTime = 0;
+            initThree: function() {
+                const cvs = document.getElementById('p1-canvas');
+                this.scene = new THREE.Scene();
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000); 
+                this.camera.position.z=50;
 
-            if (isPlaying && analyser) {
-                const data = new Uint8Array(analyser.frequencyBinCount);
-                analyser.getByteFrequencyData(data);
+                this.renderer = new THREE.WebGLRenderer({canvas:cvs, antialias:true, alpha:true, preserveDrawingBuffer:true});
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                this.renderer.autoClear = false;
+
+                const rp = new THREE.RenderPass(this.scene, this.camera);
+                this.bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth,window.innerHeight), 0, 0.4, 0);
+                this.composer = new THREE.EffectComposer(this.renderer);
+                this.composer.addPass(rp);
+                this.composer.addPass(this.bloomPass);
+
+                this.fadeScene = new THREE.Scene();
+                this.fadeCamera = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+                this.fadeMesh = new THREE.Mesh(new THREE.PlaneGeometry(2,2), new THREE.MeshBasicMaterial({color:this.bgThree, transparent:true, opacity:1.0}));
+                this.fadeScene.add(this.fadeMesh);
+
+                this.visualGroup = new THREE.Group(); this.visualGroup.position.y=12; this.scene.add(this.visualGroup);
+                this.centralShape = new THREE.Mesh(new THREE.IcosahedronGeometry(8,0), new THREE.MeshBasicMaterial({color:this.fgThree, wireframe:true, transparent:true, opacity:0})); 
+                this.visualGroup.add(this.centralShape);
+
+                const gridGroup = new THREE.Group(); gridGroup.position.y=12; this.scene.add(gridGroup);
+                const lm = new THREE.LineBasicMaterial({color:this.fgThree, transparent:true, opacity:0});
+                for(let i=0;i<=30;i++) {
+                    let pts=[]; for(let j=0;j<=30;j++) pts.push(new THREE.Vector3(j-15,i-15,0));
+                    let g=new THREE.BufferGeometry().setFromPoints(pts); g.setAttribute('initialPosition',g.attributes.position.clone());
+                    let l=new THREE.Line(g,lm.clone()); gridGroup.add(l); this.gridLines.push(l);
+                    pts=[]; for(let j=0;j<=30;j++) pts.push(new THREE.Vector3(i-15,j-15,0));
+                    g=new THREE.BufferGeometry().setFromPoints(pts); g.setAttribute('initialPosition',g.attributes.position.clone());
+                    l=new THREE.Line(g,lm.clone()); gridGroup.add(l); this.gridLines.push(l);
+                }
+
+                this.waveLinesGroup = new THREE.Group(); this.waveLinesGroup.position.y=-25; this.scene.add(this.waveLinesGroup);
+                for(let k=-1;k<=1;k++) {
+                    let pts=[]; for(let j=0;j<=100;j++) pts.push(new THREE.Vector3((j/100-0.5)*70,k,0));
+                    let g=new THREE.BufferGeometry().setFromPoints(pts); g.setAttribute('initialPosition',g.attributes.position.clone());
+                    let l=new THREE.Line(g,lm.clone()); this.waveLinesGroup.add(l); this.waveLines.push(l);
+                }
+                window.addEventListener('resize', ()=>this.onResize());
+            },
+
+            setupInteraction: function() {
+                const cvs = document.getElementById('p1-canvas');
+                cvs.addEventListener('mousedown', e => this.onDown(e));
+                window.addEventListener('mouseup', e => this.onUp(e));
+                cvs.addEventListener('mousemove', e => this.onMove(e));
+                cvs.addEventListener('touchstart', e => this.onDown(e.touches[0]));
+                window.addEventListener('touchend', e => this.onUp(e));
+                cvs.addEventListener('touchmove', e => { e.preventDefault(); this.onMove(e.touches[0]); }, { passive: false });
+            },
+
+            onDown: function(e) {
+                this.mouse.x = (e.clientX/window.innerWidth)*2-1;
+                this.mouse.y = -(e.clientY/window.innerHeight)*2+1;
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                if(this.raycaster.intersectObject(this.centralShape).length > 0) {
+                    this.isDragging = true; this.dragMode = 'none'; this.prevMouse = {x:e.clientX, y:e.clientY};
+                    this.userHasInteracted = true;
+                    document.body.style.cursor = 'grabbing';
+                    document.getElementById('p1-interaction-tooltip').classList.remove('visible');
+                }
+            },
+
+            onUp: function() {
+                if(this.isDragging) {
+                    this.isDragging = false; document.body.style.cursor = 'default';
+                    if(this.interactionPanner) this.interactionPanner.pan.value = 0;
+                    if(this.interactionFilter) this.interactionFilter.frequency.setTargetAtTime(20000, this.audioContext.currentTime, 0.1);
+                    if(this.interactionHighpass) this.interactionHighpass.frequency.setTargetAtTime(20, this.audioContext.currentTime, 0.1);
+                    if(this.isScrubbing) {
+                        if(this.wasPlayingBeforeScrub) this.startAudio(this.pausedTime);
+                        this.isScrubbing = false;
+                    }
+                }
+            },
+
+            onMove: function(e) {
+                this.mouse.x = (e.clientX/window.innerWidth)*2-1;
+                this.mouse.y = -(e.clientY/window.innerHeight)*2+1;
+                if(!this.isDragging) {
+                    this.raycaster.setFromCamera(this.mouse, this.camera);
+                    if(this.raycaster.intersectObject(this.centralShape).length > 0) document.body.style.cursor = 'pointer';
+                    else document.body.style.cursor = 'default';
+                    return;
+                }
+                const dx = e.clientX - this.prevMouse.x;
+                const dy = e.clientY - this.prevMouse.y;
+                if(this.dragMode === 'none') {
+                    if(Math.abs(dx)>Math.abs(dy) && Math.abs(dx)>2) this.dragMode = 'horizontal';
+                    else if(Math.abs(dy)>2) this.dragMode = 'vertical';
+                }
+                this.centralShape.rotation.y += dx*0.005;
+                this.centralShape.rotation.x += dy*0.005;
+                if(this.dragMode === 'horizontal') {
+                    if(!this.isScrubbing) { this.isScrubbing=true; this.wasPlayingBeforeScrub=this.isPlaying; if(this.isPlaying) this.stopAudio(); }
+                    let t = (this.sourceNode && this.isPlaying) ? (this.audioContext.currentTime - this.startTime) : this.pausedTime;
+                    let n = Math.max(0, Math.min(this.buffer.duration, t + dx*0.05));
+                    this.pausedTime = n;
+                    document.getElementById('p1-progress').value = n;
+                    this.updateTimeDisplay(n);
+                    if(this.audioContext.currentTime - this.lastScrub > 0.1) {
+                        const s = this.audioContext.createBufferSource();
+                        s.buffer = this.isReversed ? this.reversedBuffer : this.buffer;
+                        s.playbackRate.value = 0.5 + Math.random()*1.5;
+                        const g = this.audioContext.createGain(); g.gain.value = 0.5;
+                        s.connect(g); g.connect(this.overdriveNode);
+                        s.start(0, n, 0.1);
+                        this.lastScrub = this.audioContext.currentTime;
+                    }
+                    const dVal = parseFloat(document.getElementById('p1-delay').value);
+                    this.visualGroup.scale.setScalar(1 + dVal*0.2 + Math.min(1, Math.abs(dx)*0.05)*0.5);
+                } else if(this.dragMode === 'vertical') {
+                    const ny = e.clientY/window.innerHeight;
+                    if(ny > 0.5) {
+                        const f = (ny-0.5)*2;
+                        this.interactionFilter.frequency.value = 20000 * Math.pow(50/20000, f);
+                        this.interactionHighpass.frequency.value = 20;
+                    } else {
+                        const f = 1.0 - (ny*2);
+                        this.interactionHighpass.frequency.value = 20 * Math.pow(5000/20, 1-f);
+                        this.interactionFilter.frequency.value = 20000;
+                    }
+                }
+                this.prevMouse = {x:e.clientX, y:e.clientY};
+            },
+
+            startAudio: function(off) {
+                if(this.transitionTimer) clearTimeout(this.transitionTimer);
+                if(!this.buffer) return;
+                this.stopSourceOnly();
                 
-                let bass = 0, mid = 0, high = 0;
-                for (let i = 0; i < data.length; i++) {
-                    const amplitude = data[i] / 255;
-                    if (i < data.length * 0.1) bass += amplitude;
-                    else if (i < data.length * 0.4) mid += amplitude;
-                    else high += amplitude;
-                }
-                bassAvg = bass / (data.length * 0.1);
-                midAvg = mid / (data.length * 0.3);
-                highAvg = high / (data.length * 0.6);
-                overallAvg = (bassAvg + midAvg + highAvg) / 3;
+                this.sourceNode = this.audioContext.createBufferSource();
+                this.sourceNode.buffer = this.isReversed ? this.reversedBuffer : this.buffer;
+                this.sourceNode.playbackRate.value = parseFloat(document.getElementById('p1-pitch').value);
+                this.sourceNode.connect(this.gainNode);
+                
+                let start = this.isReversed ? (this.buffer.duration - off) : off;
+                if(start<0) start=0;
+                this.sourceNode.start(0, start);
+                this.startTime = this.audioContext.currentTime - start;
+                this.isPlaying = true;
 
-                // Calcula o tempo de reprodução no contexto do áudio original
-                const elapsedTime = audioContext.currentTime - startTime;
-                currentTime = isReversed ? (originalBuffer.duration - elapsedTime) : elapsedTime;
+                this.sourceNode.onended = () => {
+                    if(this.isPlaying) {
+                        this.stopAudio();
+                        this.isReversed = !this.isReversed;
+                        document.getElementById('p1-reverse-btn').querySelector('svg').style.transform = this.isReversed ? 'scaleX(-1)' : 'scaleX(1)';
+                        this.startAudio(this.isReversed ? this.buffer.duration : 0);
+                    }
+                };
 
-                // Atualizar barra de progresso
-                if (!isSeeking) {
-                    progressSlider.value = currentTime;
-                    updateProgressTime(currentTime);
+                document.getElementById('p1-play-btn').innerHTML='<svg viewBox="0 0 24 24" width="24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+                document.getElementById('p1-main-text').style.opacity=1;
+                document.getElementById('p1-main-text').classList.add('ganwalk-neon-glow');
+                document.getElementById('p1-toggle-button').classList.add('visible');
+                
+                const bar = document.getElementById('p1-controls-bar');
+                const arrow = document.getElementById('p1-toggle-arrow');
+                
+                if (!this.hasStartedOnce) {
+                    this.hasStartedOnce = true;
+
+                    bar.classList.remove('expanded');
+                    arrow.style.transform = 'rotate(0deg)';
+                    this.targetWaveY = -12; this.targetWaveScale = 4;
+                    this.waveLines.forEach(l=>l.material.opacity=0.8);
+                    
+                    if(!this.userHasInteracted) document.getElementById('p1-interaction-tooltip').classList.add('visible');
+                    
+                    if(this.menuTimeout) clearTimeout(this.menuTimeout);
+                    this.menuTimeout = setTimeout(() => {
+                        if(!bar.classList.contains('expanded')) {
+                            bar.classList.add('expanded');
+                            arrow.style.transform = 'rotate(180deg)';
+                            this.targetWaveY = -25; this.targetWaveScale = 1;
+                            this.waveLines.forEach(l=>l.material.opacity=0);
+                            document.getElementById('p1-interaction-tooltip').classList.remove('visible');
+                            setTimeout(() => this.onResize(), 400);
+                        }
+                        showMarquee(); 
+                    }, 5000);
                 }
+
+                this.centralShape.material.opacity=1; 
+                this.gridLines.forEach(l=>l.material.opacity=0.6);
+                
+                this.onResize(); 
+                this.resume();
+            },
+
+            stopAudio: function() {
+                this.stopSourceOnly();
+                const elap = this.audioContext.currentTime - this.startTime;
+                this.pausedTime = this.isReversed ? (this.buffer.duration - elap) : elap;
+            },
+
+            setupUI: function() {
+                const get = id => document.getElementById(id);
+                get('p1-play-btn').onclick = () => { if(this.isPlaying) this.stopAudio(); else this.startAudio(this.pausedTime); };
+                get('p1-reverse-btn').onclick = () => {
+                    const was = this.isPlaying; if(was) this.stopAudio();
+                    this.isReversed = !this.isReversed; 
+                    get('p1-reverse-btn').querySelector('svg').style.transform = this.isReversed ? 'scaleX(-1)' : 'scaleX(1)';
+                    if(was) this.startAudio(this.pausedTime);
+                };
+                const bind = (id, node, param, map) => {
+                    get(id).addEventListener('input', e => { node[param].value = map ? map(parseFloat(e.target.value)) : parseFloat(e.target.value); });
+                };
+                bind('p1-volume', this.gainNode, 'gain');
+                bind('p1-delay', this.delayNode, 'delayTime');
+                bind('p1-chorus', this.chorusGain, 'gain', v=>v*10);
+                bind('p1-eq-low', this.eqNodes.low, 'gain');
+                bind('p1-eq-mid', this.eqNodes.mid, 'gain');
+                bind('p1-eq-high', this.eqNodes.high, 'gain');
+                get('p1-pitch').addEventListener('input', e => { if(this.sourceNode) this.sourceNode.playbackRate.value = parseFloat(e.target.value); });
+                get('p1-overdrive').addEventListener('input', e => { this.overdriveNode.curve = this.makeDistortionCurve(parseFloat(e.target.value)*1000); });
+                get('p1-reverb').addEventListener('input', e => {
+                    const v=parseFloat(e.target.value);
+                    this.reverbGain.gain.value = v*4;
+                    if(this.bloomPass) this.bloomPass.strength = v*2.0;
+                });
+                get('p1-filter').addEventListener('input', e => {
+                    const v=parseFloat(e.target.value);
+                    this.filterNode.frequency.value = 20000 * Math.pow(20/20000, v/100);
+                    this.gridLines.forEach(l => l.material.opacity = ((100-v)/100)*0.6);
+                });
+                get('p1-progress').addEventListener('input', e => {
+                    if(this.isPlaying) this.stopAudio();
+                    this.pausedTime = parseFloat(e.target.value);
+                    this.updateTimeDisplay(this.pausedTime);
+                });
+                
+                get('p1-progress').addEventListener('change', e => { if (!this.isPlaying) this.startAudio(this.pausedTime); });
+                get('p1-progress').addEventListener('touchend', e => { if (!this.isPlaying) this.startAudio(this.pausedTime); });
+                
+                get('p1-bg-color').addEventListener('input', e => {
+                    this.bgColor = e.target.value;
+                    this.bgThree.set(this.bgColor);
+                    const rgb = this.hex2rgb(this.bgColor);
+                    
+                    document.documentElement.style.setProperty('--bg-color', this.bgColor);
+                    document.documentElement.style.setProperty('--control-bg', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`);
+                    document.documentElement.style.setProperty('--bg-gradient-top', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)`);
+                    document.documentElement.style.setProperty('--bg-gradient-bottom', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
+                    
+                    const contrast = this.getInverseContrastColor(this.bgColor);
+                    document.documentElement.style.setProperty('--text-color', contrast.hex);
+                    document.documentElement.style.setProperty('--border-color', `rgba(${contrast.r}, ${contrast.g}, ${contrast.b}, 0.3)`);
+
+                    this.fadeMesh.material.color.set(this.bgThree);
+                });
+
+                get('p1-fg-color').addEventListener('input', e => {
+                    this.fgColor = e.target.value;
+                    this.fgThree.set(this.fgColor);
+                    const rgb = this.hex2rgb(this.fgColor);
+                    
+                    document.documentElement.style.setProperty('--highlight-color', this.fgColor);
+                    document.documentElement.style.setProperty('--highlight-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`); 
+                    
+                    if(!this.colorChangedTriggered) {
+                        this.centralShape.material.color.set(this.fgThree);
+                        this.gridLines.forEach(l => l.material.color.set(this.fgThree));
+                        this.waveLines.forEach(l => l.material.color.set(this.fgThree));
+                    }
+                });
+
+                get('p1-clear-effects').onclick = () => {
+                    ['p1-delay','p1-reverb','p1-chorus','p1-filter','p1-overdrive','p1-eq-low','p1-eq-mid','p1-eq-high'].forEach(id => { get(id).value = 0; get(id).dispatchEvent(new Event('input')); });
+                    get('p1-pitch').value = 1; get('p1-pitch').dispatchEvent(new Event('input'));
+                    
+                    get('p1-bg-color').value = '#000000'; get('p1-bg-color').dispatchEvent(new Event('input'));
+                    get('p1-fg-color').value = '#ffffff'; get('p1-fg-color').dispatchEvent(new Event('input'));
+
+                    document.body.classList.remove('mustard-theme');
+                    this.colorChangedTriggered = false;
+                };
+                
+                get('p1-toggle-button').onclick = () => {
+                    if (this.menuTimeout) { clearTimeout(this.menuTimeout); this.menuTimeout = null; }
+                    showMarquee(); 
+                    
+                    const bar = get('p1-controls-bar');
+                    bar.classList.toggle('expanded');
+                    get('p1-toggle-arrow').style.transform = bar.classList.contains('expanded') ? 'rotate(180deg)' : 'rotate(0deg)';
+                    if(bar.classList.contains('expanded')) {
+                        this.targetWaveY = -25; this.targetWaveScale = 1;
+                        this.waveLines.forEach(l=>l.material.opacity=0);
+                        get('p1-interaction-tooltip').classList.remove('visible');
+                        setTimeout(() => this.onResize(), 400);
+                    } else {
+                        this.targetWaveY = -12; this.targetWaveScale = 4;
+                        this.waveLines.forEach(l=>l.material.opacity=0.8);
+                        if(!this.userHasInteracted) get('p1-interaction-tooltip').classList.add('visible');
+                    }
+                };
+            },
+
+            updateTimeDisplay: function(t) {
+                const fmt=s=>`${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`;
+                document.getElementById('p1-time-display').innerText=`${fmt(t)} / ${fmt(this.buffer.duration)}`;
+            },
+
+            animate: function() {
+                if(!this.isActive) return;
+                this.animationId = requestAnimationFrame(() => this.animate());
+                const t = this.audioContext.currentTime;
+                const dir = this.isReversed ? -1 : 1;
+                const freq = new Uint8Array(this.analyser.frequencyBinCount);
+                this.analyser.getByteFrequencyData(freq);
+                let b=0, m=0, h=0;
+                for(let i=0;i<freq.length;i++) { const v=freq[i]/255; if(i<freq.length*0.1)b+=v; else if(i<freq.length*0.4)m+=v; else h+=v; }
+                b/=(freq.length*0.1); m/=(freq.length*0.3); h/=(freq.length*0.6);
+                const avg = (b+m+h)/3;
+
+                if(this.isPlaying) {
+                    const elap = t - this.startTime;
+                    const cur = this.isReversed ? (this.buffer.duration - elap) : elap;
+                    document.getElementById('p1-progress').value = cur;
+                    this.updateTimeDisplay(cur);
+
+                    const isYellowEventActive = false; 
+
+                    if(isYellowEventActive && !this.colorChangedTriggered) {
+                        this.colorChangedTriggered = true; document.body.classList.add('mustard-theme');
+                        this.centralShape.material.color.set(this.mustardYellowThree);
+                        this.gridLines.forEach(l=>l.material.color.set(this.mustardYellowThree));
+                        this.waveLines.forEach(l=>l.material.color.set(this.mustardYellowThree));
+                    } else if (!isYellowEventActive && this.colorChangedTriggered) {
+                        this.colorChangedTriggered = false; document.body.classList.remove('mustard-theme');
+                        this.centralShape.material.color.set(this.fgThree);
+                        this.gridLines.forEach(l=>l.material.color.set(this.fgThree));
+                        this.waveLines.forEach(l=>l.material.color.set(this.fgThree));
+                    }
+                }
+
+                const dVal = parseFloat(document.getElementById('p1-delay').value);
+                const rVal = parseFloat(document.getElementById('p1-reverb').value);
+                const odVal = parseFloat(document.getElementById('p1-overdrive').value);
+                const cVal = parseFloat(document.getElementById('p1-chorus').value);
+
+                document.getElementById('p1-main-text').style.transform = `scale(${1+avg*0.05*dir})`;
+                this.fadeMesh.material.opacity = 0.02 + 0.98 * Math.pow(1.0 - rVal, 3);
+                this.renderer.setClearColor(this.bgThree, 1 - (dVal*0.9));
+                this.visualGroup.rotation.y += (0.005 + avg*0.01)*dir;
+                if(!this.isScrubbing) this.visualGroup.scale.setScalar(1 + dVal*0.1 + Math.sin(t*2)*dVal*0.1);
+                this.centralShape.rotation.x += (0.005 + h*0.02)*dir;
+                this.centralShape.rotation.y += (0.005 + m*0.02)*dir;
+                this.centralShape.rotation.z += cVal*0.05*dir;
+                this.centralShape.scale.set(1 + b*0.5 + odVal*0.5, 1+b*0.5-odVal*0.5, 1 + b*0.5 + odVal*0.5);
+
+                this.gridLines.forEach(l => {
+                    const pos = l.geometry.attributes.position.array;
+                    const init = l.geometry.attributes.initialPosition.array;
+                    l.material.linewidth = Math.max(1, 1+m*0.1);
+                    for(let i=0; i<pos.length; i+=3) {
+                        const x=init[i], y=init[i+1];
+                        const w = Math.sin(x*0.5 + t*2*dir)*b*5 + Math.cos(y*0.5 + t*3*dir)*m*3 + Math.sin(Math.sqrt(x*x+y*y)*0.5 - t*5)*dVal*5;
+                        const jit = (Math.random()-0.5)*h*0.8*(rVal*8)*dir;
+                        pos[i] = x+jit; pos[i+1] = y+jit; pos[i+2] = w;
+                    }
+                    l.geometry.attributes.position.needsUpdate=true;
+                });
+
+                this.waveLinesGroup.position.y += (this.targetWaveY - this.waveLinesGroup.position.y)*0.05;
+                this.waveLinesGroup.scale.y += (this.targetWaveScale - this.waveLinesGroup.scale.y)*0.05;
+                this.waveLines.forEach((l, idx) => {
+                    const pos = l.geometry.attributes.position.array;
+                    const band = idx===0?b : (idx===1?m:h);
+                    for(let i=0; i<pos.length; i+=3) pos[i+2] = Math.sin(pos[i]*(0.3+idx*0.1) + t*(5+idx)*dir) * band * (idx===0?45 : (idx===1?20:15));
+                    l.geometry.attributes.position.needsUpdate=true;
+                    l.material.opacity = Math.min(1, 0.5 + band*0.5);
+                });
+
+                if(!this.isDragging) {
+                    this.interactionPanner.pan.value += (0 - this.interactionPanner.pan.value)*0.05;
+                    this.interactionFilter.frequency.value += (20000 - this.interactionFilter.frequency.value)*0.05;
+                    this.interactionHighpass.frequency.value += (20 - this.interactionHighpass.frequency.value)*0.05;
+                }
+
+                this.renderer.render(this.fadeScene, this.fadeCamera);
+                this.renderer.clearDepth();
+                this.composer.render();
+
+                if(document.getElementById('p1-controls-bar').classList.contains('expanded')) {
+                    this.drawMiniCanvas(b, m, h, t, dir, rVal, parseFloat(document.getElementById('p1-filter').value), odVal, cVal);
+                }
+            },
+
+            drawMiniCanvas: function(b, m, h, time, dir, reverb, filter, od, chorus) {
+                const mc = document.getElementById('p1-mini-canvas');
+                if(!mc) return;
+                const ctx = mc.getContext('2d');
+                const w = mc.width, hC = mc.height;
+                const bgRGB = this.hex2rgb(this.bgColor);
+                ctx.fillStyle = `rgba(${bgRGB.r},${bgRGB.g},${bgRGB.b},${0.02 + 0.98 * Math.pow(1.0 - reverb, 3)})`;
+                ctx.fillRect(0,0,w,hC);
+                const col = this.colorChangedTriggered ? '#E1AD01' : this.fgColor;
+                const alpha = Math.max(0, ((100-filter)/100))*0.8;
+                ctx.lineWidth = 1 + od*2;
+                const vShift = Math.sin(time*2)*chorus*10;
+                const draw = (amp, freq, spd, yOff) => {
+                    ctx.beginPath(); ctx.strokeStyle = col; ctx.globalAlpha = alpha;
+                    for(let x=0; x<w; x++) {
+                        const y = yOff + Math.sin(((x/w - 0.5)*4)*freq + time*spd*dir)*(amp*20) + vShift + (Math.random()-0.5)*od*3;
+                        if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+                    }
+                    ctx.stroke(); ctx.globalAlpha = 1;
+                };
+                draw(b, 2.0, 5, hC/2); draw(m, 3.0, 6, hC/2); draw(h, 4.0, 7, hC/2);
+            },
+
+            onResize: function() {
+                if(!this.camera) return;
+                this.camera.aspect=window.innerWidth/window.innerHeight; this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.composer.setSize(window.innerWidth, window.innerHeight);
+                document.getElementById('p1-main-text').style.fontSize=(10*(window.innerWidth/100))+'px';
+                const mc = document.getElementById('p1-mini-canvas');
+                if(mc && mc.parentElement) { mc.width = mc.parentElement.clientWidth; mc.height = mc.parentElement.clientHeight; }
+            },
+
+            resume: function() {
+                if(this.transitionTimer) clearTimeout(this.transitionTimer);
+                if(this.audioContext.state==='suspended') this.audioContext.resume();
+                this.isActive = true;
+                this.onResize();
+                if(this.animationId) cancelAnimationFrame(this.animationId);
+                this.animate();
+            },
+            pause: function() {
+                this.isActive=false; cancelAnimationFrame(this.animationId); this.animationId=null;
+                if(this.isPlaying) this.stopAudio();
             }
-            
-            // Lógica para a mudança de cor aos 2:06
-            const triggerTime = 126; // 2 minutos e 6 segundos = 126 segundos
+        };
 
-            if (currentTime >= triggerTime && !colorChangedTriggered) {
-                colorChangedTriggered = true;
-                document.body.classList.add('mustard-theme');
-                centralShape.material.color.set(mustardYellowThree);
-                gridLines.forEach(line => line.material.color.set(mustardYellowThree));
-                waveLines.forEach(line => line.material.color.set(mustardYellowThree));
-            } else if (currentTime < triggerTime && colorChangedTriggered) {
-                colorChangedTriggered = false;
-                document.body.classList.remove('mustard-theme');
-                centralShape.material.color.set(whiteThree);
-                gridLines.forEach(line => line.material.color.set(whiteThree));
-                waveLines.forEach(line => line.material.color.set(whiteThree));
-            }
+        // Simplified Initialization
+        window.onload = function() {
+            document.fonts.ready.then(() => {
+                const l = document.getElementById('global-loader');
+                const t = document.getElementById('click-to-start-text');
+                const msgs = ["Sintonizando o éter", "Tecendo a realidade", "Escutando o vazio", "Decifrando ecos"];
+                let i = 0;
+                const iv = setInterval(() => { if(!t.classList.contains('ready')) t.innerText=msgs[i++%msgs.length]; }, 2000);
 
-            const odValue = parseFloat(overdriveSlider.value);
-            const reverbValue = parseFloat(reverbSlider.value);
-            const chorusValue = parseFloat(chorusSlider.value);
-            const delayValue = parseFloat(delaySlider.value);
-            const pitchValue = parseFloat(pitchSlider.value);
-            const lowEqValue = parseFloat(lowEqSlider.value);
-            const midEqValue = parseFloat(midEqSlider.value);
-            const highEqValue = parseFloat(highEqSlider.value);
-            const direction = isReversed ? -1 : 1;
-            
-            renderer.setClearColor(0x000000, 1 - (delayValue * 0.9));
-            renderer.clear();
-
-            const glowIntensity = 0.8 + overallAvg * 1.2;
-            const currentGlowColor = colorChangedTriggered ? mustardYellowHex : 0xFFFFFF;
-            const r = (currentGlowColor >> 16) & 0xFF;
-            const g = (currentGlowColor >> 8) & 0xFF;
-            const b = (currentGlowColor) & 0xFF;
-            ganwalkText.style.textShadow = `0 0 ${10*glowIntensity}px rgba(${r}, ${g}, ${b}, 0.8), 0 0 ${20*glowIntensity}px rgba(${r}, ${g}, ${b}, 0.6), 0 0 ${30*glowIntensity}px rgba(${r}, ${g}, ${b}, 0.4)`;
-            ganwalkText.style.transform = `scale(${1.0 + overallAvg * 0.05 * direction})`;
-            
-            // Apenas o icosaedro e as linhas de onda giram
-            visualGroup.rotation.y += (0.005 + overallAvg * 0.01) * direction;
-            visualGroup.scale.setScalar(1 + delayValue * 0.1);
-
-            centralShape.rotation.x += (0.005 + highAvg * 0.02) * direction; 
-            centralShape.rotation.y += (0.005 + midAvg * 0.02) * direction; 
-            centralShape.rotation.z += chorusValue * 0.05 * direction;
-            centralShape.scale.set(
-                1 + bassAvg * 0.5 + odValue * 0.5 + lowEqValue * 0.02,
-                1 + bassAvg * 0.5 - odValue * 0.5 + lowEqValue * 0.02,
-                1 + bassAvg * 0.5 + odValue * 0.5 + lowEqValue * 0.02
-            );
-            
-            // A grade permanece estática, mas reage ao áudio
-            gridLines.forEach(line => {
-                const positions = line.geometry.attributes.position.array;
-                const initialPositions = line.geometry.attributes.initialPosition.array;
-                line.material.linewidth = Math.max(1, 1 + midEqValue * 0.1);
-                for (let i = 0; i < positions.length; i += 3) {
-                    const x = initialPositions[i];
-                    const y = initialPositions[i + 1];
-                    let waveEffect = Math.sin(x * 0.5 + currentTime * 2 * direction) * bassAvg * 5 + 
-                                     Math.cos(y * 0.5 + currentTime * 3 * direction) * midAvg * 3;
-                    const jitterX = (Math.random() - 0.5) * highAvg * 0.8 * (reverbValue * 8 + highEqValue * 0.5) * direction;
-                    const jitterY = (Math.random() - 0.5) * highAvg * 0.8 * (reverbValue * 8 + highEqValue * 0.5) * direction;
-                    positions[i] = x + jitterX;
-                    positions[i + 1] = y + jitterY;
-                    positions[i + 2] = waveEffect;
-                }
-                line.geometry.attributes.position.needsUpdate = true;
+                App1.init().then(() => {
+                    clearInterval(iv);
+                    t.classList.remove('loading'); t.classList.add('ready');
+                    t.innerHTML = 'Clique, ouça e <span class="faça-glow">faça</span>.';
+                    
+                    t.onclick = () => {
+                        l.style.opacity = 0;
+                        setTimeout(() => l.style.display = 'none', 1500);
+                        
+                        document.getElementById('experience-1').classList.add('active');
+                        App1.setBackground(false); 
+                        if (!App1.isPlaying) App1.restart();
+                        setTimeout(() => App1.resume(), 100);
+                    };
+                });
             });
-            
-            if (waveLines[0]) {
-                const line = waveLines[0];
-                const positions = line.geometry.attributes.position.array;
-                const initialPositions = line.geometry.attributes.initialPosition.array;
-                line.material.linewidth = Math.max(1, 1 + midEqValue * 0.1);
-                for (let i = 0; i < positions.length; i += 3) {
-                    const x = initialPositions[i];
-                    const waveZ = Math.sin(x * 0.3 + currentTime * 5 * direction) * bassAvg * 25;
-                    positions[i + 2] = waveZ;
-                }
-                line.geometry.attributes.position.needsUpdate = true;
-                line.material.opacity = Math.min(1, 0.5 + bassAvg * 0.5);
-            }
-            if (waveLines[1]) {
-                const line = waveLines[1];
-                const positions = line.geometry.attributes.position.array;
-                const initialPositions = line.geometry.attributes.initialPosition.array;
-                line.material.linewidth = Math.max(1, 1 + midEqValue * 0.1);
-                for (let i = 0; i < positions.length; i += 3) {
-                    const x = initialPositions[i];
-                    const waveZ = Math.sin(x * 0.4 + currentTime * 6 * direction) * midAvg * 20;
-                    positions[i + 2] = waveZ;
-                }
-                line.geometry.attributes.position.needsUpdate = true;
-                line.material.opacity = Math.min(1, 0.5 + midAvg * 0.5);
-            }
-            if (waveLines[2]) {
-                const line = waveLines[2];
-                const positions = line.geometry.attributes.position.array;
-                const initialPositions = line.geometry.attributes.initialPosition.array;
-                line.material.linewidth = Math.max(1, 1 + midEqValue * 0.1);
-                for (let i = 0; i < positions.length; i += 3) {
-                    const x = initialPositions[i];
-                    const waveZ = Math.sin(x * 0.5 + currentTime * 7 * direction) * highAvg * 15;
-                    positions[i + 2] = waveZ;
-                }
-                line.geometry.attributes.position.needsUpdate = true;
-                line.material.opacity = Math.min(1, 0.5 + highAvg * 0.5);
-            }
-
-            renderer.render(scene, camera);
-        }
-        
-        // --- Início da Aplicação ---
-        clickToStartText.addEventListener('click', async () => {
-            if (!originalBuffer) return;
-            if (audioContext.state === 'suspended') {
-                await audioContext.resume();
-            }
-
-            if (isPlaying) return;
-
-            togglePlayPause();
-            
-            clickToStartText.style.opacity = '0';
-            clickToStartText.style['pointer-events'] = 'none';
-            controlsBar.classList.remove('hidden');
-            toggleControlsButton.classList.add('hidden'); 
-
-            // Torna os elementos visíveis
-            centralShape.material.opacity = 1;
-            gridLines.forEach(line => line.material.opacity = 0.6);
-            waveLines.forEach(line => line.material.opacity = 0.8);
-            
-            ganwalkText.classList.add('ganwalk-glitch');
-            setTimeout(() => {
-                ganwalkText.classList.remove('ganwalk-glitch');
-                ganwalkText.classList.add('ganwalk-neon-glow');
-            }, 600);
-        });
-
-        window.onload = async function () {
-            // Espera as fontes personalizadas carregarem antes de mostrar o título
-            await document.fonts.ready;
-            
-            // Agora que a fonte carregou, torna o título visível com um fade-in
-            ganwalkText.style.opacity = '1';
-
-            // Continua com a inicialização do aplicativo
-            initThreeJS();
-            initAudio();
-            await loadAudio();
-            animate();
         };
     </script>
 </body>
 </html>
-
-
-
